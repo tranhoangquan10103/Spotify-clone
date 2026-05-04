@@ -10,7 +10,6 @@
   [![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)](#)
   [![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](#)
 
-  [Xem Demo Trực Tiếp](https://link-demo-cua-ban.com) · [Báo Lỗi](https://github.com/username-cua-ban/ten-repo/issues) · [Đóng Góp](https://github.com/username-cua-ban/ten-repo/pulls)
 </div>
 
 ---
@@ -49,15 +48,6 @@ Dự án được xây dựng với các công nghệ hiện đại:
 
 ---
 
-## 📸 Ảnh chụp màn hình (Screenshots)
-
-> **💡 Mẹo:** Hãy thay thế các đường link ảnh dưới đây bằng ảnh chụp màn hình dự án thật của bạn. Bạn có thể dùng định dạng GIF để khoe tính năng phát nhạc!
-
-| Trang Chủ | Trình Phát Nhạc |
-| :---: | :---: |
-| <img src="https://via.placeholder.com/600x400.png?text=Trang+Chu+Screenshot" alt="Trang Chủ" width="100%"/> | <img src="https://via.placeholder.com/600x400.png?text=Trinh+Phat+Nhac+Screenshot" alt="Trình phát nhạc" width="100%"/> |
-
----
 
 ## 🛠️ Hướng dẫn cài đặt và chạy cục bộ
 
