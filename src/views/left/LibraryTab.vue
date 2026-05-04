@@ -65,7 +65,7 @@ const toggleSortPanel = (event: Event) => {
 									<i class="pi pi-list"></i>
 								</button>
 								<button class="view-option" type="button" aria-label="Grid">
-									<i class="material-symbols-outlined"> apps </i>
+									<i class="material-symbols-outlined"></i>
 								</button>
 								<button class="view-option" type="button" aria-label="Compact grid">
 									<i class="pi pi-th-large"></i>

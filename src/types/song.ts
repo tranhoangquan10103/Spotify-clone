@@ -7,4 +7,5 @@ export type Song = {
 	durationMs: number;
 	durationLabel: string;
 	coverUrl: string;
+	audioUrl: string;
 };

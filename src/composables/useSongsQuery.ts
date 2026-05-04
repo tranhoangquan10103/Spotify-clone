@@ -32,6 +32,11 @@ const buildCoverUrl = (trackName: string, artists: string[]) => {
 	return new URL(`../songs/covers/${fileName}`, import.meta.url).href;
 };
 
+const buildAudioUrl = (trackName: string, artists: string[]) => {
+	const fileName = `${sanitizeTrackName(trackName)} - ${artists.join('; ')}.flac`;
+	return new URL(`../songs/audio/${fileName}`, import.meta.url).href;
+};
+
 const mapRow = (row: SongRow): Song => {
 	const trackUri = row['Track URI'] ?? '';
 	const trackName = row['Track Name'] ?? '';
@@ -48,6 +53,7 @@ const mapRow = (row: SongRow): Song => {
 		durationMs,
 		durationLabel: formatDuration(durationMs),
 		coverUrl: buildCoverUrl(trackName, artists),
+		audioUrl: buildAudioUrl(trackName, artists),
 	};
 };
 

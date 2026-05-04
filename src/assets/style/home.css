@@ -458,6 +458,7 @@ body {
   position: relative;
   display: flex;
   align-items: center;
+  touch-action: none;
 }
 
 .now-playing-progress-bar:hover {
@@ -466,9 +467,13 @@ body {
 
 .now-playing-progress-fill {
   height: 100%;
-  background: #1db954;
+  background: #ffffff;
   border-radius: 2px;
-  transition: width 0.1s;
+  transition: width 0.1s, background-color 0.2s;
+}
+
+.now-playing-progress-bar:hover .now-playing-progress-fill {
+  background: #1db954;
 }
 
 .now-playing-progress-handle {
@@ -482,10 +487,15 @@ body {
   transform: translate(-50%, -50%);
   opacity: 0;
   transition: opacity 0.2s;
+  pointer-events: none;
 }
 
 .now-playing-progress-bar:hover .now-playing-progress-handle {
   opacity: 1;
+}
+
+.now-playing-audio {
+  display: none;
 }
 
 /* Right Section: Extra Controls */
