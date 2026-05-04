@@ -7,6 +7,8 @@ import InputText from 'primevue/inputtext';
 import LibraryTab from './left/LibraryTab.vue';
 import TrackTab from './middle/TrackTab.vue';
 import NowPlayingTab from './right/NowPlayingTab.vue';
+import QueueTab from './right/QueueTab.vue';
+import ConnectTab from './right/ConnectTab.vue';
 import { useAuthStore } from '../stores/useAuthStore';
 import { usePlayerStore } from '../stores/usePlayerStore';
 
@@ -22,6 +24,8 @@ const currentTime = ref(0);
 const duration = ref(0);
 const isScrubbing = ref(false);
 const fallbackCoverUrl = 'https://i.scdn.co/image/ab67616d000011eb838be058f3d9ade37d66054e';
+type RightTab = 'nowPlaying' | 'queue' | 'connect';
+const activeRightTab = ref<RightTab>('nowPlaying');
 
 const getSvgUrl = (name: string) => {
 	return new URL(`../assets/svg/${name}.svg`, import.meta.url).href;
@@ -30,9 +34,9 @@ const menuItems = ref([
 	{ label: 'Account', svgName: 'link' }, 
 	{ label: 'Profile', svgName: 'person' },
 	{ label: 'Recents', svgName: 'history' }, 
-	{ label: 'Upgrade to Premium', svgName: 'link' },
-	{ label: 'Support', svgName: 'link' },
-	{ label: 'Download', svgName: 'link' },
+	{ label: 'Upgrade to Premium', svgName: 'link', command: () => window.open('https://www.spotify.com/vn-en/premium/?ref=web_loggedin_upgrade_menu', '_blank') },
+	{ label: 'Support', svgName: 'link', command: () => window.open('https://support.spotify.com/', '_blank') },
+	{ label: 'Download', svgName: 'link', command: () => window.open('https://spotify.com/download', '_blank') },
 	{ label: 'Settings', svgName: 'settings' },
 	{ separator: true },
 	{ label: 'Log out', svgName: 'logout', command: () => authStore.logOut() }
@@ -68,6 +72,10 @@ const currentTimeLabel = computed(() => formatTime(currentTime.value));
 const durationLabel = computed(() => formatTime(resolvedDuration.value));
 const playPauseIcon = computed(() => getSvgUrl(isPlaying.value ? 'pause' : 'play'));
 const playPauseLabel = computed(() => (isPlaying.value ? 'Pause' : 'Play'));
+
+const toggleRightTab = (tab: RightTab) => {
+	activeRightTab.value = activeRightTab.value === tab ? 'nowPlaying' : tab;
+};
 
 const goToSignUp = () => {
 	router.push('/signup');
@@ -284,18 +292,21 @@ onBeforeUnmount(() => {
 					</div>
 				</div>
 
-				<!-- CONTAINER MIDDLE -->
+				<!-- CONTAINER CENTER MIDDLE -->
 				<div class="center-content">
+					<!-- CONTAINER LEFT CONTENT -->
 					<LibraryTab />
 
-					<!-- CONTAINER MAIN CONTENT -->
+					<!-- CONTAINER MIDDLE CONTENT -->
 					<div class="content-section">
 						<TrackTab />
 					</div>
 
-					<!-- CONTAINER SUBMAIN CONTENT -->
+					<!-- CONTAINER RIGHT CONTENT -->
 					<div class="song-section">
-						<NowPlayingTab />
+						<NowPlayingTab v-if="activeRightTab === 'nowPlaying'" />
+						<QueueTab v-else-if="activeRightTab === 'queue'" />
+						<ConnectTab v-else />
 					</div>
 				</div>
 
@@ -361,10 +372,24 @@ onBeforeUnmount(() => {
 						<button v-tooltip.top="'Lyrics'" class="player-btn" type="button" aria-label="Lyrics">
 							<img alt="lyrics" src="../assets/svg/lyrics.svg">
 						</button>
-							<button v-tooltip.top="'Queue'" class="player-btn" type="button" aria-label="Queue">
+							<button
+								v-tooltip.top="'Queue'"
+								class="player-btn"
+								type="button"
+								aria-label="Queue"
+								:aria-pressed="activeRightTab === 'queue'"
+								@click="toggleRightTab('queue')"
+							>
 							<img alt="Queue" src="../assets/svg/queue.svg">
 						</button>
-						<button v-tooltip.top="'Connect to a device'" class="player-btn" type="button" aria-label="Connect to a device">
+							<button
+								v-tooltip.top="'Connect to a device'"
+								class="player-btn"
+								type="button"
+								aria-label="Connect to a device"
+								:aria-pressed="activeRightTab === 'connect'"
+								@click="toggleRightTab('connect')"
+							>
 							<img alt="Connect to a device" src="../assets/svg/connect-device.svg">
 						</button>
 						<button v-tooltip.top="'Mini player'" class="player-btn" type="button" aria-label="Mini player">
