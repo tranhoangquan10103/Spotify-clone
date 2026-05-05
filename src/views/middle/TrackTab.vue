@@ -42,18 +42,14 @@ const isSelected = (track: Song) => track.trackUri === playerStore.currentTrack?
 					:key="track.trackUri"
 					class="track-row"
 					:class="{ 'is-active': isSelected(track) }"
-					role="button"
 					tabindex="0"
 					@click="selectTrack(track)"
-					@keydown.enter.prevent="selectTrack(track)"
-					@keydown.space.prevent="selectTrack(track)"
 				>
 					<div class="track-col track-col-index">
 						<button
+							v-tooltip.top="{ value: 'Play', showDelay: 300 }"
 							v-if="isSelected(track)"
 							class="track-index-button"
-							type="button"
-							aria-label="Play"
 							@click="playTrack(track, $event)"
 						>
 							<img class="track-index-icon" src="../../assets/svg/play.svg" alt="Play" />
