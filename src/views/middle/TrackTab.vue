@@ -28,9 +28,7 @@ const isSelected = (track: Song) => track.trackUri === playerStore.currentTrack?
 			<div class="track-col track-col-index">#</div>
 			<div class="track-col track-col-title">Title</div>
 			<div class="track-col track-col-album">Album</div>
-			<div class="track-col track-col-duration">
-				<i class="pi pi-clock"></i>
-			</div>
+			<div class="track-col track-col-duration"><i class="pi pi-clock"></i></div>	
 		</div>
 
 		<div v-if="error" class="track-state">Unable to load songs.</div>

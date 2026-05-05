@@ -350,14 +350,6 @@ body {
   min-height: 0;
 }
 
-.now-playing-section{
-  display: flex;
-  gap: 10px;
-  height: auto;
-  background: #000000;
-  padding: 0px;
-  flex-grow: 1;
-}
 
 /* MAIN SECTION*/
 
@@ -387,7 +379,6 @@ body {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
   grid-template-rows: auto auto;
-  gap: 1rem;
   align-items: center;
   padding: 0.5rem 1rem;
 }
@@ -431,6 +422,11 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.now-playing-title:hover {
+  color: #1ed760;
 }
 
 .now-playing-artist {
@@ -440,6 +436,11 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.now-playing-artist:hover {
+  color: #1ed760;
 }
 
 /* Center Section: Player Controls */

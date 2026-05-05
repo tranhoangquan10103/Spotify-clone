@@ -15,6 +15,7 @@ import PlaylistTab from './middle/PlaylistTab.vue';
 import ProfileTab from './middle/ProfileTab.vue';
 import SettingsTab from './middle/SettingsTab.vue';
 import TrackTab from './middle/TrackTab.vue';
+import TrackDetailTab from './middle/TrackDetailTab.vue';
 
 import NowPlayingTab from './right/NowPlayingTab.vue';
 import QueueTab from './right/QueueTab.vue';
@@ -34,7 +35,7 @@ const isPlaying = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
 const isScrubbing = ref(false);
-const fallbackCoverUrl = 'https://i.scdn.co/image/ab67616d000011eb838be058f3d9ade37d66054e';
+const fallbackCoverUrl = 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW1wdmIwamRsMWs0MHdwdWdnMnM3b2F4andudXhkdmZkMHM4a2RxZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/bdcVgamzkEGNB2hAl6/giphy.gif';
 const centerContentRef = ref<HTMLDivElement | null>(null);
 const leftPanelWidth = ref(0);
 const middlePanelWidth = ref(0);
@@ -47,12 +48,27 @@ const isCompactLayout = ref(false);
 const savedPanelWidths = ref({ left: 0, middle: 0, right: 0 });
 type RightTab = 'nowPlaying' | 'queue' | 'connect';
 const activeRightTab = ref<RightTab>('nowPlaying');
-type MiddleTab = 'album' | 'artist' | 'feed' | 'lyrics' | 'profile' | 'recents' | 'settings' | 'track';
+type MiddleTab = 'album' | 'artist' | 'feed' | 'lyrics' | 'profile' | 'recents' | 'settings' | 'track' | 'trackdetail';
 const activeMiddleTab = ref<MiddleTab>('track');
 let activeResizer: 'left' | 'right' | null = null;
 let resizeStartX = 0;
 let resizeStartLeft = 0;
 let resizeStartRight = 0;
+
+const goToSignUp = () => {
+	router.push('/signup');
+};
+
+const goToLogIn = () => {
+	router.push('/login');
+};
+
+const toggleRightTab = (tab: RightTab) => {
+	activeRightTab.value = activeRightTab.value === tab ? 'nowPlaying' : tab;
+};
+const toggleMiddleTab = (tab: MiddleTab) => {
+	activeMiddleTab.value = activeMiddleTab.value === tab ? 'track' : tab;
+};
 
 const getSvgUrl = (name: string) => {
 	return new URL(`../assets/svg/${name}.svg`, import.meta.url).href;
@@ -75,14 +91,13 @@ const toggle = (event: Event) => {
 
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 const currentTrack = computed(() => playerStore.currentTrack);
-const displayTitle = computed(() => currentTrack.value?.trackName ?? 'Select a track');
-const displayArtist = computed(() => currentTrack.value?.artistsText ?? '');
+const displayTitle = computed(() => currentTrack.value?.trackName);
+const displayArtist = computed(() => currentTrack.value?.artistsText);
 const displayCover = computed(() => currentTrack.value?.coverUrl ?? fallbackCoverUrl);
 const resolvedDuration = computed(() => {
 	if (duration.value > 0) {
 		return duration.value;
 	}
-
 	const trackDuration = currentTrack.value?.durationMs ?? 0;
 	return trackDuration > 0 ? trackDuration / 1000 : 0;
 });
@@ -91,212 +106,123 @@ const progressPercent = computed(() => {
 	if (!total) {
 		return 0;
 	}
-
 	const ratio = currentTime.value / total;
 	return Math.min(100, Math.max(0, ratio * 100));
 });
+
 const currentTimeLabel = computed(() => formatTime(currentTime.value));
 const durationLabel = computed(() => formatTime(resolvedDuration.value));
 const playPauseIcon = computed(() => getSvgUrl(isPlaying.value ? 'pause' : 'play'));
 const playPauseLabel = computed(() => (isPlaying.value ? 'Pause' : 'Play'));
 
-const leftPanelStyle = computed(() => ({
-	flex: `0 0 ${leftPanelWidth.value}px`,
-	width: `${leftPanelWidth.value}px`,
-}));
-const middlePanelStyle = computed(() => ({
-	flex: `0 0 ${middlePanelWidth.value}px`,
-	width: `${middlePanelWidth.value}px`,
-}));
-const rightPanelStyle = computed(() => ({
-	flex: `0 0 ${rightPanelWidth.value}px`,
-	width: `${rightPanelWidth.value}px`,
-}));
+const getPanelStyle = (widthValue: number) => ({
+    flex: `0 0 ${widthValue}px`,
+    width: `${widthValue}px`,
+});
+const leftPanelStyle = computed(() => getPanelStyle(leftPanelWidth.value));
+const middlePanelStyle = computed(() => getPanelStyle(middlePanelWidth.value));
+const rightPanelStyle = computed(() => getPanelStyle(rightPanelWidth.value));
 
-const toggleRightTab = (tab: RightTab) => {
-	activeRightTab.value = activeRightTab.value === tab ? 'nowPlaying' : tab;
-};
-
-const getCenterWidth = () => {
-	const container = centerContentRef.value;
-	if (!container) {
-		return 0;
-	}
-	return container.getBoundingClientRect().width;
-};
-
-const getAvailableCenterWidth = (containerWidth: number, includeResizers = true) => {
-	const reserved = includeResizers ? resizerWidth * 2 : 0;
-	return Math.max(0, containerWidth - reserved);
-};
-
-const clamp = (value: number, min: number, max: number) =>
-	Math.min(max, Math.max(min, value));
+const getCenterWidth = () => centerContentRef.value?.getBoundingClientRect().width || 0;
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const setPanelWidths = (left: number, middle: number, right: number) => {
-	leftPanelWidth.value = left;
-	middlePanelWidth.value = middle;
-	rightPanelWidth.value = right;
+    leftPanelWidth.value = left;
+    middlePanelWidth.value = middle;
+    rightPanelWidth.value = right;
 };
+const getAvailableCenterWidth = (containerWidth: number, includeResizers = true) => 
+    Math.max(0, containerWidth - (includeResizers ? resizerWidth * 2 : 0));
 
 const initializePanels = (availableWidth: number) => {
-	if (!availableWidth) {
-		return;
-	}
-	const maxSideWidth = Math.max(minSideWidth, Math.floor((availableWidth - minMiddleWidth) / 2));
-	let sideWidth = Math.round(availableWidth * 0.22);
-	sideWidth = clamp(sideWidth, minSideWidth, maxSideWidth);
-	let middleWidth = availableWidth - sideWidth * 2;
-	if (middleWidth < minMiddleWidth) {
-		middleWidth = minMiddleWidth;
-		sideWidth = Math.max(minSideWidth, Math.floor((availableWidth - middleWidth) / 2));
-	}
-
-	setPanelWidths(sideWidth, availableWidth - sideWidth * 2, sideWidth);
+    if (!availableWidth) return;
+    const maxSideWidth = Math.max(minSideWidth, Math.floor((availableWidth - minMiddleWidth) / 2));
+    const sideWidth = clamp(Math.round(availableWidth * 0.22), minSideWidth, maxSideWidth);
+    const middleWidth = Math.max(minMiddleWidth, availableWidth - sideWidth * 2);
+    const finalSide = middleWidth === minMiddleWidth 
+        ? Math.max(minSideWidth, Math.floor((availableWidth - middleWidth) / 2)) 
+        : sideWidth;
+        
+    setPanelWidths(finalSide, availableWidth - finalSide * 2, finalSide);
 };
 
-const syncPanelsToContainer = (availableWidth: number) => {
-	if (!availableWidth) {
-		return;
-	}
-	const total = leftPanelWidth.value + middlePanelWidth.value + rightPanelWidth.value;
-	if (!total) {
-		initializePanels(availableWidth);
-		return;
-	}
+const applyProportionalWidths = (baseWidths: {left: number, middle: number, right: number}, availableWidth: number) => {
+    const total = baseWidths.left + baseWidths.middle + baseWidths.right;
+    if (!total) return initializePanels(availableWidth);
 
-	let nextLeft = Math.round((leftPanelWidth.value / total) * availableWidth);
-	let nextRight = Math.round((rightPanelWidth.value / total) * availableWidth);
-	let nextMiddle = availableWidth - nextLeft - nextRight;
-	if (nextLeft < minSideWidth || nextRight < minSideWidth || nextMiddle < minMiddleWidth) {
-		initializePanels(availableWidth);
-		return;
-	}
+    const nextLeft = Math.round((baseWidths.left / total) * availableWidth);
+    const nextRight = Math.round((baseWidths.right / total) * availableWidth);
+    const nextMiddle = availableWidth - nextLeft - nextRight;
 
-	setPanelWidths(nextLeft, nextMiddle, nextRight);
-};
-
-const restorePanelWidths = (availableWidth: number) => {
-	const saved = savedPanelWidths.value;
-	const total = saved.left + saved.middle + saved.right;
-	if (!total) {
-		initializePanels(availableWidth);
-		return;
-	}
-	let nextLeft = Math.round((saved.left / total) * availableWidth);
-	let nextRight = Math.round((saved.right / total) * availableWidth);
-	let nextMiddle = availableWidth - nextLeft - nextRight;
-	if (nextLeft < minSideWidth || nextRight < minSideWidth || nextMiddle < minMiddleWidth) {
-		initializePanels(availableWidth);
-		return;
-	}
-	setPanelWidths(nextLeft, nextMiddle, nextRight);
+    if (nextLeft < minSideWidth || nextRight < minSideWidth || nextMiddle < minMiddleWidth) {
+        return initializePanels(availableWidth);
+    }
+    setPanelWidths(nextLeft, nextMiddle, nextRight);
 };
 
 const handleCenterResize = () => {
-	const containerWidth = getCenterWidth();
-	if (!containerWidth) {
-		return;
-	}
+    const containerWidth = getCenterWidth();
+    if (!containerWidth) return;
 
-	const shouldCompact = containerWidth <= compactBreakpoint;
-	if (shouldCompact) {
-		if (!isCompactLayout.value) {
-			savedPanelWidths.value = {
-				left: leftPanelWidth.value,
-				middle: middlePanelWidth.value,
-				right: rightPanelWidth.value,
-			};
-		}
-		isCompactLayout.value = true;
-		const availableWidth = getAvailableCenterWidth(containerWidth, false);
-		setPanelWidths(0, availableWidth, 0);
-		return;
-	}
+    if (containerWidth <= compactBreakpoint) {
+        if (!isCompactLayout.value) {
+            savedPanelWidths.value = { left: leftPanelWidth.value, middle: middlePanelWidth.value, right: rightPanelWidth.value };
+        }
+        isCompactLayout.value = true;
+        setPanelWidths(0, getAvailableCenterWidth(containerWidth, false), 0);
+        return;
+    }
 
-	const availableWidth = getAvailableCenterWidth(containerWidth, true);
-	if (isCompactLayout.value) {
-		isCompactLayout.value = false;
-		restorePanelWidths(availableWidth);
-		return;
-	}
-
-	syncPanelsToContainer(availableWidth);
-};
-
-const stopResize = () => {
-	activeResizer = null;
-	window.removeEventListener('pointermove', handleResizeMove);
-	window.removeEventListener('pointerup', stopResize);
-	document.body.style.cursor = '';
-};
-
-const startResize = (resizer: 'left' | 'right', event: PointerEvent) => {
-	if (isCompactLayout.value) {
-		return;
-	}
-	const containerWidth = getCenterWidth();
-	const availableWidth = getAvailableCenterWidth(containerWidth, true);
-	if (!availableWidth) {
-		return;
-	}
-
-	event.preventDefault();
-	activeResizer = resizer;
-	resizeStartX = event.clientX;
-	resizeStartLeft = leftPanelWidth.value;
-	resizeStartRight = rightPanelWidth.value;
-	window.addEventListener('pointermove', handleResizeMove);
-	window.addEventListener('pointerup', stopResize);
-	document.body.style.cursor = 'col-resize';
+    const availableWidth = getAvailableCenterWidth(containerWidth, true);
+    if (isCompactLayout.value) {
+        isCompactLayout.value = false;
+        applyProportionalWidths(savedPanelWidths.value, availableWidth);
+    } else {
+        applyProportionalWidths({
+            left: leftPanelWidth.value, middle: middlePanelWidth.value, right: rightPanelWidth.value
+        }, availableWidth);
+    }
 };
 
 const handleResizeMove = (event: PointerEvent) => {
-	if (!activeResizer) {
-		return;
-	}
-	const containerWidth = getCenterWidth();
-	const availableWidth = getAvailableCenterWidth(containerWidth, true);
-	if (!availableWidth) {
-		return;
-	}
-	const deltaX = event.clientX - resizeStartX;
+    if (!activeResizer) return;
+    const availableWidth = getAvailableCenterWidth(getCenterWidth(), true);
+    if (!availableWidth) return;
 
-	if (activeResizer === 'left') {
-		const fixedRight = resizeStartRight;
-		let nextLeft = clamp(
-			resizeStartLeft + deltaX,
-			minSideWidth,
-			availableWidth - fixedRight - minMiddleWidth,
-		);
-		let nextMiddle = availableWidth - fixedRight - nextLeft;
-		if (nextMiddle < minMiddleWidth) {
-			nextMiddle = minMiddleWidth;
-			nextLeft = availableWidth - fixedRight - nextMiddle;
-		}
-		setPanelWidths(nextLeft, nextMiddle, fixedRight);
-		return;
-	}
+    const deltaX = event.clientX - resizeStartX;
+    const isLeft = activeResizer === 'left';
+    
+    const fixedWidth = isLeft ? resizeStartRight : resizeStartLeft;
+    const maxAdjustableWidth = availableWidth - fixedWidth - minMiddleWidth;
 
-	const fixedLeft = resizeStartLeft;
-	let nextRight = clamp(
-		resizeStartRight - deltaX,
-		minSideWidth,
-		availableWidth - fixedLeft - minMiddleWidth,
-	);
-	let nextMiddle = availableWidth - fixedLeft - nextRight;
-	if (nextMiddle < minMiddleWidth) {
-		nextMiddle = minMiddleWidth;
-		nextRight = availableWidth - fixedLeft - nextMiddle;
-	}
-	setPanelWidths(fixedLeft, nextMiddle, nextRight);
+    const baseTargetWidth = isLeft ? resizeStartLeft + deltaX : resizeStartRight - deltaX;
+    const newTargetWidth = clamp(baseTargetWidth, minSideWidth, maxAdjustableWidth);
+    
+    const newMiddleWidth = availableWidth - fixedWidth - newTargetWidth;
+
+    if (isLeft) {
+        setPanelWidths(newTargetWidth, newMiddleWidth, fixedWidth);
+    } else {
+        setPanelWidths(fixedWidth, newMiddleWidth, newTargetWidth);
+    }
 };
 
-const goToSignUp = () => {
-	router.push('/signup');
+const startResize = (resizer: 'left' | 'right', event: PointerEvent) => {
+    if (isCompactLayout.value || !getAvailableCenterWidth(getCenterWidth(), true)) return;
+    event.preventDefault();
+    activeResizer = resizer;
+    resizeStartX = event.clientX;
+    resizeStartLeft = leftPanelWidth.value;
+    resizeStartRight = rightPanelWidth.value;
+    window.addEventListener('pointermove', handleResizeMove);
+    window.addEventListener('pointerup', stopResize);
+    document.body.style.cursor = 'col-resize';
 };
 
-const goToLogIn = () => {
-	router.push('/login');
+const stopResize = () => {
+    activeResizer = null;
+    window.removeEventListener('pointermove', handleResizeMove);
+    window.removeEventListener('pointerup', stopResize);
+    document.body.style.cursor = '';
 };
 
 const formatTime = (valueSeconds: number) => {
@@ -550,6 +476,7 @@ onMounted(() => {
 						<LyricsTab v-else-if="activeMiddleTab === 'lyrics'" />
 						<PlaylistTab v-else-if="activeMiddleTab === 'feed'" />
 						<ProfileTab v-else-if="activeMiddleTab === 'profile'" />
+						<TrackDetailTab v-else-if="activeMiddleTab === 'trackdetail'" />
 						<SettingsTab v-else />
 					</div>
 
@@ -579,8 +506,14 @@ onMounted(() => {
 							/>
 						</div>
 						<div class="now-playing-info">
-							<div class="now-playing-title">{{ displayTitle }}</div>
-							<div class="now-playing-artist">{{ displayArtist }}</div>
+							<div class="now-playing-title"
+							:aria-pressed="activeMiddleTab === 'trackdetail'"
+							@click="toggleMiddleTab('trackdetail')"
+							>{{ displayTitle }}</div>
+							<div class="now-playing-artist"
+							:aria-pressed="activeMiddleTab === 'artist'"
+							@click="toggleMiddleTab('artist')"
+							>{{ displayArtist }}</div>
 						</div>
 					</div>
 
