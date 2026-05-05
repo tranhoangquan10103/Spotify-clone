@@ -1,6 +1,51 @@
-h1{
-    font-family: "Fraunces", "Times New Roman", serif;
+.now-playing-header{
+    font-family:Verdana, Geneva, Tahoma, sans-serif;
     font-size: clamp(2.4rem, 4vw, 3.6rem);
-    margin: 0 0 0.6rem;
+    margin: 0 1rem;
     color: #fff;
+	display: flex;
+    font-size: 20px;
+}
+
+.now-playing-scroll{
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.about-artist{
+    min-height: 30rem;
+    border-radius: 0.5rem;
+}
+
+.about-artist .about-upper{
+    background-image: url(https://i.scdn.co/image/ab67616d0000b27396e2549d594b828ccd598c07);
+    background-size: cover;
+    background-position: center;
+    height: 10rem;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    padding: 1rem;
+    font-family: "Fraunces", "Arial", sans-serif;
+    font-size: 20px;
+}
+
+.about-artist .about-lower{
+    padding: 1rem;
+    font-family: "Fraunces", "Arial", sans-serif;
+    font-size: 14px;
+    text-align: justify;
+}
+
+.header-2{
+    font-family: "Fraunces", "Arial", sans-serif;
+    font-size: 18px;
+    margin-bottom: 0.5rem;
+}
+
+.header-3{
+    font-family: "Fraunces", "Arial", sans-serif;
+    font-size: 14px;
+    margin-bottom: 0.5rem;
+    color: #b3b3b3;
 }
