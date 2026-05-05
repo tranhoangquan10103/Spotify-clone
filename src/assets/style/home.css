@@ -279,18 +279,75 @@ body {
 
 .center-content{
   display: flex;
-  gap: 10px;
+  gap: 0;
   height: auto;
   overflow: hidden;
   background: #000000;
   padding: 0px;
   flex-grow: 10;
+  align-items: stretch;
 }
 
-.center-content > * {
+.center-panel {
   background: #121212;
   border-radius: 12px;
   padding: 10px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.library-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.layout-resizer {
+  width: 6px;
+  cursor: grab;
+  position: relative;
+  touch-action: none;
+  transition: background-color .15s ease-out, opacity .25s ease-out;
+}
+
+.layout-resizer:active {
+  cursor: grabbing;
+}
+
+.layout-resizer::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 999px;
+}
+
+.layout-resizer:hover::after {
+  background: #7c7c7c
+;
+}
+
+.center-content.is-compact .layout-resizer {
+  display: none;
+}
+
+.center-content.is-compact .library-panel,
+.center-content.is-compact .song-section {
+  display: none;
+}
+
+.center-content.is-compact .content-section {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.library-panel .library-section {
+  max-width: none;
+  flex-grow: 1;
+  width: 100%;
+  min-height: 0;
 }
 
 .now-playing-section{
@@ -305,22 +362,20 @@ body {
 /* MAIN SECTION*/
 
 .content-section {
-  flex-grow: 10;
   display: flex;
   flex-flow: row wrap;
   position: relative;
+  min-width: 0;
 }
 
 /* SUBMAIN SECTION*/
 
 .song-section {
-  flex-grow: 1;
-  flex: 1;
-  max-width: 26rem;
   display: flex;
   flex-flow: row wrap;
   position: relative;
   align-items: flex-start;
+  min-width: 0;
 }
 
 /* NOW PLAYING SECTION */

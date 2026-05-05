@@ -10,9 +10,16 @@ const playerStore = usePlayerStore();
 
 const tracks = computed(() => data.value ?? []);
 
-const setCurrentTrack = (track: Song) => {
+const selectTrack = (track: Song) => {
 	playerStore.setCurrentTrack(track);
 };
+
+const playTrack = (track: Song, event?: Event) => {
+	event?.stopPropagation();
+	playerStore.requestPlay(track);
+};
+
+const isSelected = (track: Song) => track.trackUri === playerStore.currentTrack?.trackUri;
 </script>
 
 <template>
@@ -30,15 +37,29 @@ const setCurrentTrack = (track: Song) => {
 		<div v-else-if="!data" class="track-state">Loading songs...</div>
 		<Scrollbar v-else class="track-scroll">
 			<div class="track-rows">
-				<button
+				<div
 					v-for="(track, index) in tracks"
 					:key="track.trackUri"
 					class="track-row"
-					:class="{ 'is-active': track.trackUri === playerStore.currentTrack?.trackUri }"
-					type="button"
-					@click="setCurrentTrack(track)"
+					:class="{ 'is-active': isSelected(track) }"
+					role="button"
+					tabindex="0"
+					@click="selectTrack(track)"
+					@keydown.enter.prevent="selectTrack(track)"
+					@keydown.space.prevent="selectTrack(track)"
 				>
-					<div class="track-col track-col-index">{{ index + 1 }}</div>
+					<div class="track-col track-col-index">
+						<button
+							v-if="isSelected(track)"
+							class="track-index-button"
+							type="button"
+							aria-label="Play"
+							@click="playTrack(track, $event)"
+						>
+							<img class="track-index-icon" src="../../assets/svg/play.svg" alt="Play" />
+						</button>
+						<span v-else>{{ index + 1 }}</span>
+					</div>
 					<div class="track-col track-col-title">
 						<div class="track-title">
 							<img class="track-cover" :src="track.coverUrl" :alt="track.trackName" />
@@ -50,7 +71,7 @@ const setCurrentTrack = (track: Song) => {
 					</div>
 					<div class="track-col track-col-album">{{ track.albumName }}</div>
 					<div class="track-col track-col-duration">{{ track.durationLabel }}</div>
-				</button>
+				</div>
 			</div>
 		</Scrollbar>
 	</div>

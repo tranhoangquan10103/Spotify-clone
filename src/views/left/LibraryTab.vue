@@ -58,16 +58,64 @@ const toggleSortPanel = (event: Event) => {
 							<div class="sort-divider"></div>
 							<div class="view-title">View as</div>
 							<div class="view-options">
-								<button class="view-option is-active" type="button" aria-label="Compact list">
+								<button class="view-option is-active" type="button" aria-label="Compact list"
+									v-tooltip.bottom="{
+										value: 'Compact list',
+										showDelay: 300,
+										pt: {
+											arrow: {
+												style: {
+													borderWidth: '6px',
+												}
+											},
+											text: 'bg-primary font-medium'
+										}
+									}">
 									<i class="pi pi-bars"></i>
 								</button>
-								<button class="view-option" type="button" aria-label="List">
+								<button class="view-option" type="button" aria-label="List"
+									v-tooltip.bottom="{
+										value: 'List',
+										showDelay: 300,
+										pt: {
+											arrow: {
+												style: {
+													borderWidth: '6px',
+												}
+											},
+											text: 'bg-primary font-medium'
+										}
+									}">
 									<i class="pi pi-list"></i>
 								</button>
-								<button class="view-option" type="button" aria-label="Grid">
-									<i class="material-symbols-outlined"></i>
+								<button class="view-option" type="button" aria-label="Grid"
+									v-tooltip.bottom="{
+										value: 'Grid',
+										showDelay: 300,
+										pt: {
+											arrow: {
+												style: {
+													borderWidth: '6px',
+												}
+											},
+											text: 'bg-primary font-medium'
+										}
+									}">
+									<span class="material-symbols-outlined">apps</span>
 								</button>
-								<button class="view-option" type="button" aria-label="Compact grid">
+								<button class="view-option" type="button" aria-label="Compact grid"
+									v-tooltip.bottom="{
+										value: 'Compact grid',
+										showDelay: 300,
+										pt: {
+											arrow: {
+												style: {
+													borderWidth: '6px',
+												}
+											},
+											text: 'bg-primary font-medium'
+										}
+									}">
 									<i class="pi pi-th-large"></i>
 								</button>
 							</div>

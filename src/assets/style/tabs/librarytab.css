@@ -194,6 +194,7 @@
 	margin-top: 0.8rem;
 	border-radius: 12px;
 	background-color: #121212;
+	flex: 1 1 auto;
 	flex-direction: column;
 	min-height: 0;
 }

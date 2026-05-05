@@ -52,9 +52,30 @@
 }
 
 .track-col-index {
-	text-align: right;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
 	padding-right: 0.8rem;
 	color: #b3b3b3;
+}
+
+.track-index-button {
+	margin-left: 2rem;
+	width: 24px;
+	height: 24px;
+	border-radius: 999px;
+	border: none;
+	background: transparent;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	padding: 0;
+}
+
+.track-index-icon {
+	width: 14px;
+	height: 14px;
 }
 
 .track-title {
