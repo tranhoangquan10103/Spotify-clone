@@ -71,7 +71,6 @@ const parseSongsCsv = (csvText: string): Song[] => {
 		.filter((row) => row['Track URI'])
 		.map(mapRow);
 };
-
 export const useSongsQuery = () =>
 	useQuery({
 		queryKey: ['songs'],
