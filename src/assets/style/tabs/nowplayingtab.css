@@ -1,10 +1,11 @@
 .now-playing-header{
-    font-family:Verdana, Geneva, Tahoma, sans-serif;
-    font-size: clamp(2.4rem, 4vw, 3.6rem);
+    height: 40px;
     margin: 0 1rem;
     color: #fff;
 	display: flex;
-    font-size: 20px;
+    font-size: 18px;
+    font-weight: 600;
+    align-items: center;
 }
 
 .now-playing-scroll{
@@ -13,39 +14,184 @@
 	min-height: 0;
 }
 
+.now-playing-scroll .p-scrollpanel-content{
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    box-sizing: border-box;
+}
+
 .about-artist{
-    min-height: 30rem;
+    margin: 0;
+    padding-bottom: 0.5rem;
+}
+
+.credits{
+    margin: 0;
+	display: flex;
+	flex-flow: row wrap;
+	position: relative;
+}
+
+.album-art{
+    margin: 0;
+}
+
+.artist-card {
+    width: 100%;
+    overflow: hidden;
     border-radius: 0.5rem;
+    background-color: #1F1F1F;
 }
 
-.about-artist .about-upper{
-    background-image: url(https://i.scdn.co/image/ab67616d0000b27396e2549d594b828ccd598c07);
-    background-size: cover;
-    background-position: center;
-    height: 10rem;
-    border-top-left-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
+.image-header{
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.image-header::after{
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 10%, rgba(0, 0, 0, 0.2) 28%, rgba(0, 0, 0, 0) 58%);
+    pointer-events: none;
+}
+
+.image-header img{
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.image-badge{
+    position: absolute;
+    top: 2rem;
+    left: 1.8rem;
+    border-radius: 0.4rem;
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.artist-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.artist-info .revenue p{
+    margin: 0;
+    color: #b3b3b3;
+    font-size: 0.9rem;
+}
+
+.follow-button {
+    border-color: #b3b3b3;
+    color: white;
+    border-radius: 999px;
+    position: relative;
+    right: 0px;
+    align-self: flex-start;
+    margin: 10px;
+    flex: 0 0 auto;
+    flex-shrink: 0;
+}
+
+.credits-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 1rem;
+}
+
+.album-member{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0.2rem 0;
+    min-width: 0;
+}
+
+.album-member > div{
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.album-member-role{
+    margin: 0.4rem 0 1rem;
+    color: #b3b3b3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
+}
+
+.p-button.p-button-link{
+    color: #b3b3b3;
+}
+
+.p-button.p-button-link:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.p-button:hover {
+    background: transparent;
+    border-color: white;
+    color: white;
+    transform: scale(1.05);
+    transition: transform 0.2s;
+}
+
+.credits-title{
+    color: white;
+    font-size: 1.1rem;
+    margin: 1rem 0.2rem;
+
+}
+
+.p-button:focus {
+    box-shadow: none;
+    background: transparent;
+}
+
+.p-card .p-card-body {
     padding: 1rem;
-    font-family: "Fraunces", "Arial", sans-serif;
-    font-size: 20px;
 }
 
-.about-artist .about-lower{
-    padding: 1rem;
-    font-family: "Fraunces", "Arial", sans-serif;
-    font-size: 14px;
-    text-align: justify;
+.p-card .p-card-title {
+    font-size: 1.1rem;
+    color: white;
+    margin-bottom: 0;
 }
 
-.header-2{
-    font-family: "Fraunces", "Arial", sans-serif;
-    font-size: 18px;
-    margin-bottom: 0.5rem;
+.p-card .p-card-content {
+    padding: 0.2rem 0;
+    color: white;
 }
 
-.header-3{
-    font-family: "Fraunces", "Arial", sans-serif;
-    font-size: 14px;
-    margin-bottom: 0.5rem;
+.m-0 {
+    text-align: center;
+}
+
+.m-1 {
+    color: white;
+}
+
+.p-card .p-card-content p {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
     color: #b3b3b3;
 }

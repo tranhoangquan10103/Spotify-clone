@@ -364,10 +364,11 @@ body {
 
 .song-section {
   display: flex;
-  flex-flow: row wrap;
+  flex-direction: column;
   position: relative;
-  align-items: flex-start;
+  align-items: stretch;
   min-width: 0;
+  min-height: 0;
 }
 
 /* NOW PLAYING SECTION */

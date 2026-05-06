@@ -25,7 +25,7 @@ const toggleSortPanel = (event: Event) => {
 			<div class="tags">Artists</div>
 			<div class="tags">Albums</div>
 		</div>
-
+		
 		<Scrollbar style="width: 100%;" class="library-scroll">
 			<div class="library-search">
 				<IconField iconPosition="left">

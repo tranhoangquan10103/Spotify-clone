@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import OverlayPanel from 'primevue/overlaypanel';
 
 import Avatar from 'primevue/avatar';
 import Menu from 'primevue/menu';
