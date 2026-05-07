@@ -513,7 +513,7 @@ body {
 
 .center-content{
   display: flex;
-  gap: 0;
+  gap: 5px;
   height: auto;
   overflow: hidden;
   background: #000000;
@@ -559,8 +559,13 @@ body {
 }
 
 .layout-resizer:hover::after {
-  background: #7c7c7c
-;
+  background: #7c7c7c;
+  transition: background-color .15s ease-out,opacity .25s ease-out;
+}
+
+.layout-resizer:active::after {
+  background: #f2f2f2;
+  transition: background-color .15s ease-out,opacity .25s ease-out;
 }
 
 .center-content.is-compact .layout-resizer {
