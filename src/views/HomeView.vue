@@ -513,7 +513,6 @@ body {
 
 .center-content{
   display: flex;
-  gap: 5px;
   height: auto;
   overflow: hidden;
   background: #000000;
@@ -551,7 +550,6 @@ body {
 .layout-resizer::after {
   content: '';
   position: absolute;
-  left: 2px;
   top: 12px;
   bottom: 12px;
   width: 2px;

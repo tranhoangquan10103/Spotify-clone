@@ -8,9 +8,14 @@ import OverlayPanel from 'primevue/overlaypanel';
 import Scrollbar from '../../components/Scrollbar.vue';
 
 const sortPanel = ref();
+const isCreateActive = ref(false);
 
 const toggleSortPanel = (event: Event) => {
 	sortPanel.value?.toggle(event);
+};
+
+const toggleCreate = () => {
+    isCreateActive.value = !isCreateActive.value;
 };
 </script>
 
@@ -18,7 +23,12 @@ const toggleSortPanel = (event: Event) => {
 	<div class="library-section">
 		<div class="library-header">
 			<h4>Your Library</h4>
-			<Button label="Create" icon="pi pi-plus" class="create-button" />
+			<Button
+				label="Create"
+				icon="pi pi-plus"
+				:class="['create-button', { active: isCreateActive }]"
+				@click="toggleCreate"
+			/>
 		</div>
 		<div class="library-tags">
 			<div class="tags">Playlists</div>
@@ -235,16 +245,32 @@ const toggleSortPanel = (event: Event) => {
 .create-button {
 	align-self: flex-start;
 	border-radius: 999px;
-	background-color: #2a2a2a;
+	background-color: #1f1f1f;
 	border: none;
 	scale: 80%;
 	position: absolute;
 	right: 0px;
 }
 
+.create-button.p-button:hover {
+	background-color: #2A2A2A;
+}
+
+.create-button .pi-plus {
+	transition: transform 200ms ease;
+	display: inline-block;
+	transform-origin: center;
+}
+
+.create-button.active .pi-plus {
+	transform: rotate(45deg);
+}
+
 .library-tags {
 	display: flex;
 	flex-flow: row wrap;
+	-ms-user-select: none;
+	user-select: none;  
 }
 
 .library-tags .tags {
@@ -253,6 +279,15 @@ const toggleSortPanel = (event: Event) => {
 	padding: 0.5rem 1rem;
 	margin: 0.3rem 0.3rem 0 0;
 	cursor: pointer;
+}
+
+.library-tags .tags:hover {
+	background-color: #3a3a3a;
+}
+
+.library-tags .tags:active {
+	background-color: #444444;
+	transition: background-color .2s ease-out;
 }
 
 .inputtext.p-inputtext {
@@ -271,6 +306,11 @@ const toggleSortPanel = (event: Event) => {
 .library-search .p-input-icon,
 .library-search .pi-search {
 	color: #bbbbbb;
+}
+
+.inputtext.p-inputtext:focus{
+	outline: none;
+	box-shadow: none;
 }
 
 .library-search {
