@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import OverlayPanel from 'primevue/overlaypanel';
-
-import Avatar from 'primevue/avatar';
-import Menu from 'primevue/menu';
-import InputText from 'primevue/inputtext';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import LibraryTab from './left/LibraryTab.vue';
 
@@ -22,21 +16,10 @@ import NowPlayingTab from './right/NowPlayingTab.vue';
 import QueueTab from './right/QueueTab.vue';
 import ConnectTab from './right/ConnectTab.vue';
 
-import { useAuthStore } from '../stores/useAuthStore';
-import { usePlayerStore } from '../stores/usePlayerStore';
+import NowPlayingSection from '../components/NowPlayingSection.vue';
+import ToolbarSection from '../components/ToolbarSection.vue';
 
 
-const menu = ref();
-const router = useRouter();
-const authStore = useAuthStore();
-const playerStore = usePlayerStore();
-const audioRef = ref<HTMLAudioElement | null>(null);
-const progressBarRef = ref<HTMLDivElement | null>(null);
-const isPlaying = ref(false);
-const currentTime = ref(0);
-const duration = ref(0);
-const isScrubbing = ref(false);
-const fallbackCoverUrl = 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW1wdmIwamRsMWs0MHdwdWdnMnM3b2F4andudXhkdmZkMHM4a2RxZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/bdcVgamzkEGNB2hAl6/giphy.gif';
 const centerContentRef = ref<HTMLDivElement | null>(null);
 const leftPanelWidth = ref(0);
 const middlePanelWidth = ref(0);
@@ -56,65 +39,15 @@ let resizeStartX = 0;
 let resizeStartLeft = 0;
 let resizeStartRight = 0;
 
-const goToSignUp = () => {
-	router.push('/signup');
-};
-
-const goToLogIn = () => {
-	router.push('/login');
-};
-
 const toggleRightTab = (tab: RightTab) => {
 	activeRightTab.value = activeRightTab.value === tab ? 'nowPlaying' : tab;
 };
 const toggleMiddleTab = (tab: MiddleTab) => {
 	activeMiddleTab.value = activeMiddleTab.value === tab ? 'track' : tab;
 };
-
-const getSvgUrl = (name: string) => {
-	return new URL(`../assets/svg/${name}.svg`, import.meta.url).href;
+const handleGoHome = () => {
+  activeMiddleTab.value = 'track';
 };
-const menuItems = ref([
-	{ label: 'Account', svgName: 'link' }, 
-	{ label: 'Profile', svgName: 'person' },
-	{ label: 'Recents', svgName: 'history' }, 
-	{ label: 'Upgrade to Premium', svgName: 'link', command: () => window.open('https://www.spotify.com/vn-en/premium/?ref=web_loggedin_upgrade_menu', '_blank') },
-	{ label: 'Support', svgName: 'link', command: () => window.open('https://support.spotify.com/', '_blank') },
-	{ label: 'Download', svgName: 'link', command: () => window.open('https://spotify.com/download', '_blank') },
-	{ label: 'Settings', svgName: 'settings' },
-	{ separator: true },
-	{ label: 'Log out', svgName: 'logout', command: () => authStore.logOut() }
-]);
-
-const toggle = (event: Event) => {
-	menu.value?.toggle(event);
-};
-
-const isAuthenticated = computed(() => authStore.isAuthenticated);
-const currentTrack = computed(() => playerStore.currentTrack);
-const displayTitle = computed(() => currentTrack.value?.trackName);
-const displayArtist = computed(() => currentTrack.value?.artistsText);
-const displayCover = computed(() => currentTrack.value?.coverUrl ?? fallbackCoverUrl);
-const resolvedDuration = computed(() => {
-	if (duration.value > 0) {
-		return duration.value;
-	}
-	const trackDuration = currentTrack.value?.durationMs ?? 0;
-	return trackDuration > 0 ? trackDuration / 1000 : 0;
-});
-const progressPercent = computed(() => {
-	const total = resolvedDuration.value;
-	if (!total) {
-		return 0;
-	}
-	const ratio = currentTime.value / total;
-	return Math.min(100, Math.max(0, ratio * 100));
-});
-
-const currentTimeLabel = computed(() => formatTime(currentTime.value));
-const durationLabel = computed(() => formatTime(resolvedDuration.value));
-const playPauseIcon = computed(() => getSvgUrl(isPlaying.value ? 'pause' : 'play'));
-const playPauseLabel = computed(() => (isPlaying.value ? 'Pause' : 'Play'));
 
 const getPanelStyle = (widthValue: number) => ({
     flex: `0 0 ${widthValue}px`,
@@ -216,7 +149,7 @@ const startResize = (resizer: 'left' | 'right', event: PointerEvent) => {
     resizeStartRight = rightPanelWidth.value;
     window.addEventListener('pointermove', handleResizeMove);
     window.addEventListener('pointerup', stopResize);
-    document.body.style.cursor = 'col-resize';
+    document.body.style.cursor = 'grabbing';
 };
 
 const stopResize = () => {
@@ -226,171 +159,9 @@ const stopResize = () => {
     document.body.style.cursor = '';
 };
 
-const formatTime = (valueSeconds: number) => {
-	if (!Number.isFinite(valueSeconds)) {
-		return '0:00';
-	}
-
-	const totalSeconds = Math.max(0, Math.floor(valueSeconds));
-	const minutes = Math.floor(totalSeconds / 60);
-	const seconds = totalSeconds % 60;
-	return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-};
-
-const syncDuration = () => {
-	const audio = audioRef.value;
-	if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) {
-		return;
-	}
-
-	duration.value = audio.duration;
-};
-
-const handleTimeUpdate = () => {
-	const audio = audioRef.value;
-	if (!audio || isScrubbing.value) {
-		return;
-	}
-
-	currentTime.value = audio.currentTime;
-};
-
-const handlePlay = () => {
-	isPlaying.value = true;
-};
-
-const handlePause = () => {
-	isPlaying.value = false;
-};
-
-const handleEnded = () => {
-	isPlaying.value = false;
-	currentTime.value = 0;
-};
-
-const togglePlay = async () => {
-	const audio = audioRef.value;
-	if (!audio || !currentTrack.value) {
-		return;
-	}
-
-	if (audio.paused) {
-		try {
-			await audio.play();
-		} catch {
-			isPlaying.value = false;
-		}
-		return;
-	}
-
-	audio.pause();
-};
-
-const seekToClientX = (clientX: number) => {
-	const bar = progressBarRef.value;
-	const audio = audioRef.value;
-	if (!bar || !audio) {
-		return;
-	}
-
-	const rect = bar.getBoundingClientRect();
-	if (rect.width <= 0) {
-		return;
-	}
-
-	const clampedX = Math.min(rect.width, Math.max(0, clientX - rect.left));
-	const total = resolvedDuration.value;
-	if (!total) {
-		return;
-	}
-
-	const nextTime = (clampedX / rect.width) * total;
-	audio.currentTime = nextTime;
-	currentTime.value = nextTime;
-};
-
-const onProgressPointerMove = (event: PointerEvent) => {
-	if (!isScrubbing.value) {
-		return;
-	}
-
-	seekToClientX(event.clientX);
-};
-
-const onProgressPointerUp = () => {
-	if (!isScrubbing.value) {
-		return;
-	}
-
-	isScrubbing.value = false;
-	window.removeEventListener('pointermove', onProgressPointerMove);
-	window.removeEventListener('pointerup', onProgressPointerUp);
-};
-
-const onProgressPointerDown = (event: PointerEvent) => {
-	if (!resolvedDuration.value) {
-		return;
-	}
-
-	isScrubbing.value = true;
-	seekToClientX(event.clientX);
-	window.addEventListener('pointermove', onProgressPointerMove);
-	window.addEventListener('pointerup', onProgressPointerUp);
-};
-
-watch(
-	() => playerStore.currentTrack,
-	async (track) => {
-		const audio = audioRef.value;
-		if (!audio) {
-			return;
-		}
-
-		if (!track) {
-			audio.pause();
-			audio.removeAttribute('src');
-			audio.load();
-			isPlaying.value = false;
-			currentTime.value = 0;
-			duration.value = 0;
-			return;
-		}
-
-		currentTime.value = 0;
-		duration.value = track.durationMs / 1000;
-		isPlaying.value = false;
-		await nextTick();
-		audio.load();
-		audio.currentTime = 0;
-	},
-);
-
-watch(
-	() => playerStore.playRequestId,
-	async () => {
-		const audio = audioRef.value;
-		if (!audio || !currentTrack.value) {
-			return;
-		}
-
-		await nextTick();
-		if (audio.currentSrc !== currentTrack.value.audioUrl) {
-			audio.load();
-		}
-
-		try {
-			await audio.play();
-		} catch {
-			isPlaying.value = false;
-		}
-	},
-);
-
 onBeforeUnmount(() => {
 	stopResize();
 	window.removeEventListener('resize', handleCenterResize);
-	window.removeEventListener('pointermove', onProgressPointerMove);
-	window.removeEventListener('pointerup', onProgressPointerUp);
 });
 
 onMounted(() => {
@@ -404,56 +175,7 @@ onMounted(() => {
 	<div class="app-container">
 		<main class="main-content">
 			<div class="all-container">
-				<!-- CONTAINER TOOLBAR -->
-				<div class="toolbar-section">
-					<div class="toolbar">
-						<div class="toolbar-left">
-							<img class="toolbar-logo" src="../assets/svg/logo.svg" alt="Spotify" />
-						</div>
-						<div class="toolbar-center">
-							<button v-tooltip.bottom="{ value: 'Home', showDelay: 300 }" class="toolbar-icon-button" type="button" aria-label="Home">
-								<img src="../assets/svg/home.svg" alt="Home" />
-							</button>
-							<div class="toolbar-search">
-								<img class="toolbar-search-icon" src="../assets/svg/search.svg" alt="Search" />
-								<InputText
-									placeholder="What do you want to play?"
-									class="toolbar-search-input"
-								/>
-							</div>
-							<button v-tooltip.bottom="{ value: 'Browse', showDelay: 300 }" class="toolbar-icon-button" type="button" aria-label="Browse">
-								<img src="../assets/svg/browse.svg" alt="Browse" />
-							</button>
-						</div>
-						<div class="toolbar-right">
-							<div v-if="!isAuthenticated" class="toolbar-auth">
-								<button class="toolbar-auth-button" type="button" @click="goToSignUp">Sign up</button>
-								<button class="toolbar-auth-button is-primary" type="button" @click="goToLogIn">Log in</button>
-							</div>
-							<div v-else class="toolbar-auth">
-								<button v-tooltip.bottom="{ value: 'Notifications', showDelay: 300 }" class="toolbar-icon-button-right" type="button" aria-label="Notifications">
-									<img src="../assets/svg/bell.svg" alt="Notifications" />
-								</button>
-								<button v-tooltip.bottom="{ value: 'Friends', showDelay: 300 }" class="toolbar-icon-button-right" type="button" aria-label="Friends">
-									<img src="../assets/svg/friends.svg" alt="Friends" />
-								</button>
-								<Avatar type="button" @click="toggle" aria-haspopup="true" aria-controls="overlay_tmenu" image="https://primefaces.org/cdn/primevue/images/avatar/onyamalimba.png" shape="circle" class="toolbar-avatar"/>
-								<Menu ref="menu" :popup="true" id="overlay_tmenu" :model="menuItems" class="toolbar-menu">
-									<template #item="{ item, props }">
-										<a v-bind="props.action" class="flex align-items-center custom-menu-item">
-											<span class="menu-label">{{ item.label }}</span>
-											<img 
-												v-if="item.svgName" 
-												:src="getSvgUrl(item.svgName)"
-												class="menu-svg-icon" 
-											/>
-										</a>
-									</template>
-								</Menu>
-							</div>
-						</div>
-					</div>
-				</div>
+        <ToolbarSection @go-home="handleGoHome" />
 
 				<!-- CONTAINER CENTER MIDDLE -->
 				<div class="center-content" :class="{ 'is-compact': isCompactLayout }" ref="centerContentRef">
@@ -496,112 +218,12 @@ onMounted(() => {
 					</div>
 				</div>
 
-				<!-- CONTAINER PLAYING SONG -->
-				<div class="now-playing-section">
-					<div class="now-playing-left">
-						<div class="now-playing-cover">
-							<img
-								:src="displayCover"
-								:alt="displayTitle"
-								class="now-playing-img"
-							/>
-						</div>
-						<div class="now-playing-info">
-							<div class="now-playing-title"
-							:aria-pressed="activeMiddleTab === 'trackdetail'"
-							@click="toggleMiddleTab('trackdetail')"
-							>{{ displayTitle }}</div>
-							<div class="now-playing-artist"
-							:aria-pressed="activeMiddleTab === 'artist'"
-							@click="toggleMiddleTab('artist')"
-							>{{ displayArtist }}</div>
-						</div>
-					</div>
-
-					<!-- Center: Player Controls -->
-					<div class="now-playing-center">
-						<button v-tooltip.top="{ value: 'Shuffle', showDelay: 300 }" class="player-btn" type="button" aria-label="Shuffle">
-							<img alt="Shuffle" src="../assets/svg/shuffle.svg">
-						</button>
-						<button v-tooltip.top="{ value: 'Previous', showDelay: 300 }" class="player-btn" type="button" aria-label="Previous">
-							<img alt="Previous" src="../assets/svg/skip-previous.svg">
-						</button>
-						<button
-							v-tooltip.top="{ value: playPauseLabel, showDelay: 300 }"
-							class="player-btn player-play-btn"
-							type="button"
-							:aria-label="playPauseLabel"
-							:disabled="!currentTrack"
-							@click="togglePlay"
-						>
-							<img :alt="playPauseLabel" :src="playPauseIcon">
-						</button>
-						<button v-tooltip.top="{ value: 'Next', showDelay: 300 }" class="player-btn" type="button" aria-label="Next">
-							<img alt="Next" src="../assets/svg/skip-next.svg">
-						</button>
-						<button v-tooltip.top="{ value: 'Repeat', showDelay: 300 }" class="player-btn" type="button" aria-label="Repeat">
-							<img alt="Repeat" src="../assets/svg/repeat.svg">
-						</button>
-					</div>
-
-					<!-- Progress Bar -->
-					<div class="now-playing-progress-container">
-						<span class="now-playing-time">{{ currentTimeLabel }}</span>
-						<div
-							class="now-playing-progress-bar"
-							ref="progressBarRef"
-							@pointerdown="onProgressPointerDown"
-						>
-							<div class="now-playing-progress-fill" :style="{ width: `${progressPercent}%` }"></div>
-							<div class="now-playing-progress-handle" :style="{ left: `${progressPercent}%` }"></div>
-						</div>
-						<span class="now-playing-time">{{ durationLabel }}</span>
-					</div>
-
-					<!-- Extra Controls -->
-					<div class="now-playing-right">
-						<i class="pi pi-shuffle"></i>
-						<button v-tooltip.top="{ value: 'Lyrics', showDelay: 300 }" class="player-btn" type="button" aria-label="Lyrics">
-							<img alt="lyrics" src="../assets/svg/lyrics.svg">
-						</button>
-							<button
-								v-tooltip.top="{ value: 'Queue', showDelay: 300 }"
-								class="player-btn"
-								type="button"
-								aria-label="Queue"
-								:aria-pressed="activeRightTab === 'queue'"
-								@click="toggleRightTab('queue')"
-							>
-							<img alt="Queue" src="../assets/svg/queue.svg">
-						</button>
-							<button
-								v-tooltip.top="{ value: 'Connect to a device', showDelay: 300 }"
-								class="player-btn"
-								type="button"
-								aria-label="Connect to a device"
-								:aria-pressed="activeRightTab === 'connect'"
-								@click="toggleRightTab('connect')"
-							>
-							<img alt="Connect to a device" src="../assets/svg/connect-device.svg">
-						</button>
-						<button v-tooltip.top="{ value: 'Mini player', showDelay: 300 }" class="player-btn" type="button" aria-label="Mini player">
-							<img alt="Mini player" src="../assets/svg/mini-player.svg">
-						</button>
-					</div>
-				</div>
-
-				<audio
-					ref="audioRef"
-					:src="currentTrack?.audioUrl ?? ''"
-					preload="metadata"
-					@timeupdate="handleTimeUpdate"
-					@loadedmetadata="syncDuration"
-					@durationchange="syncDuration"
-					@play="handlePlay"
-					@pause="handlePause"
-					@ended="handleEnded"
-					class="now-playing-audio"
-				></audio>
+				<NowPlayingSection
+					:active-right-tab="activeRightTab"
+					:active-middle-tab="activeMiddleTab"
+					@toggle-right-tab="toggleRightTab"
+					@toggle-middle-tab="toggleMiddleTab"
+				/>
 
 			</div>
 		</main>
@@ -611,5 +233,586 @@ onMounted(() => {
 </template>
 
 <style>
-@import '../assets/style/home.css';
+.toolbar-menu .p-menuitem-link {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.toolbar-menu .p-menuitem-icon {
+  order: 2 !important;
+  margin-left: 12px !important;
+  margin-right: 0 !important;
+}
+
+.toolbar-menu .p-menuitem-text {
+  order: 1 !important;
+}
+
+.avatar-tiered-menu .p-menuitem-link {
+  background: #282828;
+  color: #fff;
+  border-radius: 3px;
+}
+
+.avatar-tiered-menu .p-menuitem-link {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.avatar-tiered-menu .p-menuitem-icon {
+  order: 2;
+  margin-left: 12px;
+  margin-right: 0;
+}
+
+.avatar-tiered-menu .p-menuitem-text {
+  order: 1;
+}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #000000;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex-grow: 1;
+  background: #000000;
+  overflow: hidden;
+  color: white;
+}
+
+.all-container{
+  display: flex;
+  flex-direction: column;
+  margin: 9px;
+  height: auto;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.all-container > * {
+  display: flex;
+  border-radius: 16px;
+  padding: 10px;
+  flex: 1;
+  background-color: #121212;
+  overflow: hidden;
+}
+
+.toolbar-section{
+  display: flex;
+  gap: 9px;
+  height: auto;
+  max-height: 3.5rem;
+  background: #000000;
+  flex: 0 0 auto;
+  padding: 0;
+  margin-bottom: 7px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  height: 3.5rem;
+  padding: 0 1rem 0 1rem;
+  background: #000000;
+}
+
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.toolbar-center {
+  flex: 1;
+  justify-content: center;
+}
+
+.toolbar-logo {
+  width: 50px;
+  height: 50px;
+  display: block;
+  filter: brightness(0) invert(1);
+}
+
+.toolbar-icon-button,
+.toolbar-icon-button-right {
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 999px;
+  border: none;
+  background: #1f1f1f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.toolbar-icon-button:hover,
+.toolbar-icon-button-right:hover{
+  transform: scale(1.05);
+}
+
+.toolbar-icon-button-right {
+  background: transparent;
+}
+
+.toolbar-icon-button img {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: block;
+}
+
+.toolbar-search {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #1f1f1f;
+  border-radius: 999px;
+  padding: 0 0.9rem;
+  margin-top: 0px;
+  height: 2.9rem;
+  width: clamp(14rem, 36vw, 28rem);
+}
+
+.toolbar-search-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.toolbar-search-icon:hover{
+  transform: scale(1.1);
+}
+
+.toolbar-search-input.p-inputtext {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #eaeaea;
+  font-size: 0.95rem;
+  padding: 0;
+  box-shadow: none;
+}
+
+.toolbar-search-input.p-inputtext::placeholder {
+  color: #b3b3b3;
+}
+
+.toolbar-search-input.p-inputtext:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.toolbar-avatar{
+  width: 48px;
+  height: 48px;
+  border: #292929 solid 8px;
+  cursor: pointer;
+}
+
+.toolbar-auth {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.toolbar-auth-button {
+  height: 2.6rem;
+  padding: 0 1.3rem;
+  border-radius: 999px;
+  border: 1px solid #3a3a3a;
+  background: transparent;
+  color: #e5e5e5;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.toolbar-auth-button:hover {
+  transform: translateY(-1px);
+  border-color: #5a5a5a;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.toolbar-auth-button.is-primary {
+  background: #ffffff;
+  color: #111111;
+  border-color: #ffffff;
+}
+
+.toolbar-auth-button.is-primary:hover {
+  background: #f2f2f2;
+  border-color: #f2f2f2;
+}
+
+.toolbar-menu {
+  margin-top: 0.5rem;
+  background: #282828;
+  border: none;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  border-radius: 3px;
+  padding: 5px;
+  width: 300px;
+  font-size: 14px;
+}
+
+.p-menu-list {
+  padding: 4px;
+  border: none;
+}
+
+.p-menuitem,
+.p-menuitem-content {
+  background: transparent;
+  border: none;
+}
+
+.p-menuitem-link {
+  padding: 8px 8px 8px 12px;
+}
+
+.p-menuitem-link:hover {
+  background: #3E3E3E;
+  border-radius: 3px;
+}
+
+.custom-menu-item{
+  color: #d3d3d3;
+}
+
+.p-menuitem-separator {
+  border-top: 1px solid #4e4e4e;
+}
+
+.menu-svg-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.p-menu.toolbar-menu.p-menu-overlay {
+    margin-top: 12px !important;
+}
+
+.center-content{
+  display: flex;
+  gap: 0;
+  height: auto;
+  overflow: hidden;
+  background: #000000;
+  padding: 0px;
+  flex-grow: 10;
+  align-items: stretch;
+}
+
+.center-panel {
+  background: #121212;
+  border-radius: 12px;
+  padding: 10px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.library-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.layout-resizer {
+  width: 6px;
+  cursor: grab;
+  position: relative;
+  touch-action: none;
+  transition: background-color .15s ease-out, opacity .25s ease-out;
+}
+
+.layout-resizer:active {
+  cursor: grabbing;
+}
+
+.layout-resizer::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 999px;
+}
+
+.layout-resizer:hover::after {
+  background: #7c7c7c
+;
+}
+
+.center-content.is-compact .layout-resizer {
+  display: none;
+}
+
+.center-content.is-compact .library-panel,
+.center-content.is-compact .song-section {
+  display: none;
+}
+
+.center-content.is-compact .content-section {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.library-panel .library-section {
+  max-width: none;
+  flex-grow: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+
+/* MAIN SECTION*/
+
+.content-section {
+  display: flex;
+  flex-flow: row wrap;
+  position: relative;
+  min-width: 0;
+}
+
+/* SUBMAIN SECTION*/
+
+.song-section {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+  padding: 19px;
+}
+
+/* NOW PLAYING SECTION */
+
+.now-playing-section {
+  height: auto;
+  min-height: 6rem;
+  background: #000000;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  padding: 0.5rem 1rem;
+}
+
+/* Left Section: Cover + Info */
+.now-playing-left {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  grid-row: 1 / -1;
+}
+
+.now-playing-cover {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 3px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.now-playing-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.now-playing-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.now-playing-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.now-playing-title:hover {
+  color: #1ed760;
+}
+
+.now-playing-artist {
+  font-size: 0.85rem;
+  color: #b3b3b3;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.now-playing-artist:hover {
+  color: #1ed760;
+}
+
+/* Center Section: Player Controls */
+.now-playing-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.player-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #b3b3b3;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: color 0.2s, transform 0.1s;
+}
+
+.player-btn:hover {
+  transform: scale(1.05);
+}
+
+.player-play-btn {
+  background: #ffffff;
+  width: 2rem;
+  height: 2rem;
+}
+
+.player-play-btn img {
+  filter: brightness(0);
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.player-play-btn:hover {
+  background: #ffffff;
+}
+
+/* Progress Bar */
+.now-playing-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  grid-column: 2;
+  grid-row: 2;
+  width: 100%;
+}
+
+.now-playing-time {
+  font-size: 0.75rem;
+  color: #b3b3b3;
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+.now-playing-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: #404040;
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  touch-action: none;
+}
+
+.now-playing-progress-bar:hover {
+  height: 6px;
+}
+
+.now-playing-progress-fill {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: width 0.1s, background-color 0.2s;
+}
+
+.now-playing-progress-bar:hover .now-playing-progress-fill {
+  background: #1db954;
+}
+
+.now-playing-progress-handle {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.now-playing-progress-bar:hover .now-playing-progress-handle {
+  opacity: 1;
+}
+
+.now-playing-audio {
+  display: none;
+}
+
+/* Right Section: Extra Controls */
+.now-playing-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  grid-row: 1 / -1;
+  color: #b3b3b3;
+}
+
+.now-playing-right i {
+  cursor: pointer;
+  transition: color 0.2s;
+  font-size: 1rem;
+}
+
+.now-playing-right i:hover {
+  color: #1ed760;
+}
+
+.now-playing-right .player-btn {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.95rem;
+}
 </style>  

@@ -7,5 +7,10 @@
 </template>
 
 <style>
-@import url('../../assets/style/tabs/artisttab.css');
+h1{
+    font-family: "Fraunces", "Times New Roman", serif;
+    font-size: clamp(2.4rem, 4vw, 3.6rem);
+    margin: 0 0 0.6rem;
+    color: #fff;
+}
 </style>
