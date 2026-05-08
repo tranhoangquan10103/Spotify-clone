@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import LibraryTab from './left/LibraryTab.vue';
 
@@ -18,6 +18,11 @@ import ConnectTab from './right/ConnectTab.vue';
 
 import NowPlayingSection from '../components/NowPlayingSection.vue';
 import ToolbarSection from '../components/ToolbarSection.vue';
+import { useSongsQuery } from '../composables/useSongsQuery';
+import { usePlayerStore } from '../stores/usePlayerStore';
+
+const { data: songs } = useSongsQuery();
+const playerStore = usePlayerStore();
 
 
 const centerContentRef = ref<HTMLDivElement | null>(null);
@@ -48,6 +53,14 @@ const toggleMiddleTab = (tab: MiddleTab) => {
 const handleGoHome = () => {
   activeMiddleTab.value = 'track';
 };
+
+watch(
+  () => songs.value ?? [],
+  (tracks) => {
+    playerStore.setQueue(tracks);
+  },
+  { immediate: true },
+);
 
 const getPanelStyle = (widthValue: number) => ({
     flex: `0 0 ${widthValue}px`,

@@ -31,6 +31,18 @@ const currentTrack = computed(() => playerStore.currentTrack);
 const displayTitle = computed(() => currentTrack.value?.trackName);
 const displayArtist = computed(() => currentTrack.value?.artistsText);
 const displayCover = computed(() => currentTrack.value?.coverUrl ?? fallbackCoverUrl);
+const isShuffleActive = computed(() => playerStore.isShuffled);
+const repeatLabel = computed(() => {
+	if (playerStore.repeatMode === 'one') {
+		return 'Repeat one';
+	}
+
+	if (playerStore.repeatMode === 'all') {
+		return 'Repeat all';
+	}
+
+	return 'Repeat';
+});
 const resolvedDuration = computed(() => {
 	if (duration.value > 0) {
 		return duration.value;
@@ -93,6 +105,26 @@ const handlePause = () => {
 const handleEnded = () => {
 	isPlaying.value = false;
 	currentTime.value = 0;
+	if (audioRef.value) {
+		audioRef.value.currentTime = 0;
+	}
+	playerStore.handleEnded();
+};
+
+const skipNext = () => {
+	playerStore.skipNext();
+};
+
+const skipPrevious = () => {
+	playerStore.skipPrevious();
+};
+
+const toggleShuffle = () => {
+	playerStore.toggleShuffle();
+};
+
+const toggleRepeat = () => {
+	playerStore.cycleRepeatMode();
 };
 
 const togglePlay = async () => {
@@ -248,10 +280,10 @@ onBeforeUnmount(() => {
 		</div>
 
 		<div class="now-playing-center">
-			<button v-tooltip.top="{ value: 'Shuffle', showDelay: 300 }" class="player-btn" type="button" aria-label="Shuffle">
+			<button v-tooltip.top="{ value: 'Shuffle', showDelay: 300 }" class="player-btn" type="button" aria-label="Shuffle" :class="{ 'is-active': isShuffleActive }" @click="toggleShuffle">
 				<img alt="Shuffle" src="../assets/svg/shuffle.svg">
 			</button>
-			<button v-tooltip.top="{ value: 'Previous', showDelay: 300 }" class="player-btn" type="button" aria-label="Previous">
+			<button v-tooltip.top="{ value: 'Previous', showDelay: 300 }" class="player-btn" type="button" aria-label="Previous" @click="skipPrevious">
 				<img alt="Previous" src="../assets/svg/skip-previous.svg">
 			</button>
 			<button
@@ -264,10 +296,10 @@ onBeforeUnmount(() => {
 			>
 				<img :alt="playPauseLabel" :src="playPauseIcon">
 			</button>
-			<button v-tooltip.top="{ value: 'Next', showDelay: 300 }" class="player-btn" type="button" aria-label="Next">
+			<button v-tooltip.top="{ value: 'Next', showDelay: 300 }" class="player-btn" type="button" aria-label="Next" @click="skipNext">
 				<img alt="Next" src="../assets/svg/skip-next.svg">
 			</button>
-			<button v-tooltip.top="{ value: 'Repeat', showDelay: 300 }" class="player-btn" type="button" aria-label="Repeat">
+			<button v-tooltip.top="{ value: repeatLabel, showDelay: 300 }" class="player-btn" type="button" :aria-label="repeatLabel" :class="{ 'is-active': playerStore.repeatMode !== 'off' }" @click="toggleRepeat">
 				<img alt="Repeat" src="../assets/svg/repeat.svg">
 			</button>
 		</div>
@@ -286,7 +318,6 @@ onBeforeUnmount(() => {
 		</div>
 
 		<div class="now-playing-right">
-			<i class="pi pi-shuffle"></i>
 			<button
 				v-tooltip.top="{ value: 'Lyrics', showDelay: 300 }"
 				class="player-btn"
@@ -434,6 +465,10 @@ onBeforeUnmount(() => {
 
 .player-btn:hover {
 	transform: scale(1.05);
+}
+
+.player-btn.is-active {
+	background: rgba(30, 215, 96, 0.14);
 }
 
 .player-play-btn {
