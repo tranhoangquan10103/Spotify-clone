@@ -13,13 +13,14 @@ const router = useRouter();
 const authStore = useAuthStore();
 const emit = defineEmits<{
 	(e: 'go-home'): void;
+	(e: 'open-profile'): void;
 }>();
 
 const getSvgUrl = (name: string) => new URL(`../assets/svg/${name}.svg`, import.meta.url).href;
 
 const menuItems = ref([
 	{ label: 'Account', svgName: 'link' },
-	{ label: 'Profile', svgName: 'person' },
+	{ label: 'Profile', svgName: 'person', command: () => emit('open-profile') },
 	{ label: 'Recents', svgName: 'history' },
 	{ label: 'Upgrade to Premium', svgName: 'link', command: () => window.open('https://www.spotify.com/vn-en/premium/?ref=web_loggedin_upgrade_menu', '_blank') },
 	{ label: 'Support', svgName: 'link', command: () => window.open('https://support.spotify.com/', '_blank') },
@@ -56,8 +57,8 @@ const toggle = (event: Event) => {
 				<img class="toolbar-logo" style="cursor: pointer;" src="../assets/svg/logo.svg" alt="Spotify" type="button" @click="goBackHome"/>
 			</div>
 			<div class="toolbar-center">
-				<button v-tooltip.bottom="{ value: 'Home', showDelay: 300 }" class="toolbar-icon-button" type="button" aria-label="Home"@click="goBackHome">
-					<img src="../assets/svg/home.svg" alt="Home" />
+				<button v-tooltip.bottom="{ value: 'Home', showDelay: 300 }" class="toolbar-icon-button" type="button" aria-label="Home" @click="goBackHome">
+					<img class="toolbar-home-icon" src="../assets/svg/home.svg" alt="Home" />
 				</button>
 				<div class="toolbar-search">
 					<img class="toolbar-search-icon" src="../assets/svg/search.svg" alt="Search" />
@@ -67,7 +68,7 @@ const toggle = (event: Event) => {
 					/>
 				</div>
 				<button v-tooltip.bottom="{ value: 'Browse', showDelay: 300 }" class="toolbar-icon-button" type="button" aria-label="Browse">
-					<img src="../assets/svg/browse.svg" alt="Browse" />
+					<img class="toolbar-browse-icon" src="../assets/svg/browse.svg" alt="Browse" />
 				</button>
 			</div>
 			<div class="toolbar-right">
@@ -77,10 +78,10 @@ const toggle = (event: Event) => {
 				</div>
 				<div v-else class="toolbar-auth">
 					<button v-tooltip.bottom="{ value: 'Notifications', showDelay: 300 }" class="toolbar-icon-button-right" type="button" aria-label="Notifications">
-						<img src="../assets/svg/bell.svg" alt="Notifications" />
+						<img class="toolbar-notifications-icon" src="../assets/svg/bell.svg" alt="Notifications" />
 					</button>
 					<button v-tooltip.bottom="{ value: 'Friends', showDelay: 300 }" class="toolbar-icon-button-right" type="button" aria-label="Friends">
-						<img src="../assets/svg/friends.svg" alt="Friends" />
+						<img class="toolbar-friends-icon" src="../assets/svg/friends.svg" alt="Friends" />
 					</button>
 					<Avatar type="button" @click="toggle" aria-haspopup="true" aria-controls="overlay_tmenu" image="https://primefaces.org/cdn/primevue/images/avatar/onyamalimba.png" shape="circle" class="toolbar-avatar"/>
 					<Menu ref="menu" :popup="true" id="overlay_tmenu" :model="menuItems" class="toolbar-menu">
@@ -172,6 +173,15 @@ const toggle = (event: Event) => {
 	display: block;
 }
 
+.toolbar-home-icon {
+	transition: filter 0.18s ease, transform 0.18s ease;
+	filter: contrast(88%);
+}
+
+.toolbar-icon-button:hover .toolbar-home-icon {
+	filter: brightness(0) saturate(0%) invert(100%);
+}
+
 .toolbar-search {
 	display: flex;
 	align-items: center;
@@ -190,10 +200,6 @@ const toggle = (event: Event) => {
 	cursor: pointer;
 }
 
-.toolbar-search-icon:hover {
-	transform: scale(1.1);
-}
-
 .toolbar-search-input.p-inputtext {
 	flex: 1;
 	width: 100%;
@@ -209,9 +215,22 @@ const toggle = (event: Event) => {
 	color: #b3b3b3;
 }
 
+.toolbar-search:hover {
+    background-color: #2A2A2A;
+    border: 1px solid #3A3A3A;
+}
+
 .toolbar-search-input.p-inputtext:focus {
 	outline: none;
 	box-shadow: none;
+}
+
+.toolbar-search-icon:hover,
+.toolbar-search:hover .toolbar-search-icon,
+.toolbar-browse-icon:hover,
+.toolbar-friends-icon:hover,
+.toolbar-notifications-icon:hover {
+    filter: brightness(0) saturate(0%) invert(100%);
 }
 
 .toolbar-avatar {

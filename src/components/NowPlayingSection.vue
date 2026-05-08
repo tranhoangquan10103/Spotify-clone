@@ -287,7 +287,14 @@ onBeforeUnmount(() => {
 
 		<div class="now-playing-right">
 			<i class="pi pi-shuffle"></i>
-			<button v-tooltip.top="{ value: 'Lyrics', showDelay: 300 }" class="player-btn" type="button" aria-label="Lyrics">
+			<button
+				v-tooltip.top="{ value: 'Lyrics', showDelay: 300 }"
+				class="player-btn"
+				type="button"
+				aria-label="Lyrics"
+				:aria-pressed="props.activeMiddleTab === 'lyrics'"
+				@click="emit('toggle-middle-tab', 'lyrics')"
+			>
 				<img alt="lyrics" src="../assets/svg/lyrics.svg">
 			</button>
 			<button

@@ -68,7 +68,7 @@ const toggleCreate = () => {
 							<div class="sort-divider"></div>
 							<div class="view-title">View as</div>
 							<div class="view-options">
-								<button class="view-option is-active" type="button" aria-label="Compact list"
+								<button class="view-option" type="button" aria-label="Compact list"
 									v-tooltip.bottom="{
 										value: 'Compact list',
 										showDelay: 300,

@@ -175,7 +175,10 @@ onMounted(() => {
 	<div class="app-container">
 		<main class="main-content">
 			<div class="all-container">
-        <ToolbarSection @go-home="handleGoHome" />
+        <ToolbarSection
+          @go-home="handleGoHome"
+          @open-profile="() => toggleMiddleTab('profile')"
+        />
 
 				<!-- CONTAINER CENTER MIDDLE -->
 				<div class="center-content" :class="{ 'is-compact': isCompactLayout }" ref="centerContentRef">
@@ -302,7 +305,7 @@ body {
 
 .all-container > * {
   display: flex;
-  border-radius: 16px;
+  border-radius: 9px;
   padding: 10px;
   flex: 1;
   background-color: #121212;
@@ -523,10 +526,14 @@ body {
 
 .center-panel {
   background: #121212;
-  border-radius: 12px;
+  border-radius: 9px;
   padding: 10px;
   overflow: hidden;
   min-width: 0;
+}
+
+.center-panel.song-section {
+  padding: 0;
 }
 
 .library-panel {
@@ -606,7 +613,6 @@ body {
   align-items: stretch;
   min-width: 0;
   min-height: 0;
-  padding: 19px;
 }
 
 /* NOW PLAYING SECTION */
