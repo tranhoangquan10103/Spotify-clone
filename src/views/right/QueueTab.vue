@@ -24,8 +24,7 @@ const isCurrentTrack = (trackUri: string) => currentTrackUri.value === trackUri;
 <template>
     <div class="queue-tab">
         <div class="queue-header">
-            <h1>Queue</h1>
-            <p>{{ queue.length }} songs</p>
+            <h2>Queue</h2>
         </div>
 
         <div v-if="!queue.length" class="queue-state">No songs in queue yet.</div>
@@ -67,12 +66,15 @@ const isCurrentTrack = (trackUri: string) => currentTrackUri.value === trackUri;
     align-items: flex-end;
     justify-content: space-between;
     gap: 1rem;
+    margin: 0.5rem 0 0 0;
+    height: 2.5rem;
+    align-items: center;
 }
 
-h1 {
-    font-family: "Fraunces", "Times New Roman", serif;
-    font-size: clamp(2.4rem, 4vw, 3.6rem);
-    margin: 0;
+h2 {
+    font: 1.5rem 'Spotify Circular', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
     color: #fff;
 }
 
@@ -111,16 +113,17 @@ h1 {
 }
 
 .queue-item:hover {
-    background: rgba(255, 255, 255, 0.07);
+	background: #29292A;
 }
 
 .queue-item.is-active {
-    background: rgba(30, 215, 96, 0.16);
+	background: #5C5B62;
 }
 
 .queue-index {
     color: #b3b3b3;
     font-size: 0.88rem;
+    text-align: center;
 }
 
 .queue-cover {

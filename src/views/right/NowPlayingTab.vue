@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import ScrollBar from '../../components/Scrollbar.vue';
 import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
+import ArtistDialog from '../../components/ArtistDialog.vue';
+import CreditsDialog from '../../components/CreditsDialog.vue';
 
 const rhinestoneEyesVideo = new URL('../../songs/canvas/Rhinestone Eyes.mp4', import.meta.url).href;
 
@@ -18,6 +22,9 @@ const credits = [
     { name: 'Gregg White', role: 'Recording Engineer', canFollow: false },
 ];
 
+const artistVisible = ref(false);
+const creditsVisible = ref(false);
+    
 </script>
 
 <template>
@@ -34,7 +41,13 @@ const credits = [
                 </video>
                 <div class="inline-shadow"></div>
             </div>
-            <div class="artist-card">
+            <div class="artist-card" @click="artistVisible = true">
+                <Dialog v-model:visible="artistVisible" modal class="artist-dialog" :closable="false" :showHeader="false">
+                    <ArtistDialog @close="artistVisible = false" />
+                </Dialog>
+                <Dialog v-model:visible="creditsVisible" modal class="credits-dialog" :closable="false" :showHeader="false">
+                    <CreditsDialog @close="creditsVisible = false" />
+                </Dialog>
                 <div class="artist-card-header">
                     <div class="image-header" :style="{ backgroundImage: `url('${nowPlaying.artistImage}')` }"></div>
                     <p class="image-badge">About the artist</p>
@@ -59,7 +72,7 @@ const credits = [
             <div class="credits">
                 <div class="credits-header">
                     <p class="credits-title">Credits</p>
-                    <Button class="show-button" link label="Show all" />
+                    <Button class="show-button" link label="Show all" @click="creditsVisible = true" />
                 </div>
                 <div class="credits-body">
                     <div v-for="member in credits" :key="`${member.name}-${member.role}`" class="credits-member">
@@ -343,5 +356,27 @@ p.image-badge{
 .p-button.p-button-link:hover {
     color: white;
     text-decoration: underline;
+}
+
+.artist-dialog.p-dialog {
+    width: min(1120px, calc(100vw - 2rem));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+    background: #121212;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+}
+
+.artist-dialog.p-dialog .p-dialog-content {
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+}
+
+.credits-dialog.p-dialog .p-dialog-content {
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+    width: 450px;
 }
 </style>

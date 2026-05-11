@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
+import { z } from 'zod';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/useAuthStore';
 
@@ -15,9 +16,12 @@ const showPassword = ref(false);
 const codeDigits = ref<string[]>(Array.from({ length: 6 }, () => ''));
 const codeInputRefs = ref<HTMLInputElement[]>([]);
 const touched = ref({ email: false, password: false });
-const isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()));
-const isPasswordValid = computed(() => password.value.trim().length > 0);
-const isCodeValid = computed(() => codeDigits.value.every((digit) => /^\d$/.test(digit)));
+const emailSchema = z.string().trim().email();
+const passwordSchema = z.string().trim().min(1);
+const codeSchema = z.string().regex(/^\d{6}$/);
+const isEmailValid = computed(() => emailSchema.safeParse(email.value).success);
+const isPasswordValid = computed(() => passwordSchema.safeParse(password.value).success);
+const isCodeValid = computed(() => codeSchema.safeParse(codeDigits.value.join('')).success);
 const canLoginWithPassword = computed(() => isEmailValid.value && isPasswordValid.value);
 
 const maskEmail = (rawEmail: string) => {

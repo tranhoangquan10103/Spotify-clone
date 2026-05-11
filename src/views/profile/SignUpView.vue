@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { z } from 'zod';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/useAuthStore';
 
@@ -43,46 +44,75 @@ const monthOptions = [
 	{ value: '12', label: 'December' },
 ];
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const isEmailValid = computed(() => emailRegex.test(email.value.trim()));
+const emailSchema = z.string().trim().email();
+const emailResult = computed(() => emailSchema.safeParse(email.value));
+const isEmailValid = computed(() => emailResult.value.success);
 
-const passwordHasLetter = computed(() => /[A-Za-z]/.test(password.value));
-const passwordHasNumberOrSpecial = computed(
-	() => /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password.value),
-);
+const passwordLetterRegex = /[A-Za-z]/;
+const passwordNumberOrSpecialRegex = /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
+const passwordSchema = z
+	.string()
+	.min(10)
+	.refine((value) => passwordLetterRegex.test(value), {
+		message: 'Password must include a letter.',
+	})
+	.refine((value) => passwordNumberOrSpecialRegex.test(value), {
+		message: 'Password must include a number or special character.',
+	});
+const passwordResult = computed(() => passwordSchema.safeParse(password.value));
+const passwordHasLetter = computed(() => passwordLetterRegex.test(password.value));
+const passwordHasNumberOrSpecial = computed(() => passwordNumberOrSpecialRegex.test(password.value));
 const passwordHasLength = computed(() => password.value.length >= 10);
-const isPasswordValid = computed(
-	() => passwordHasLetter.value && passwordHasNumberOrSpecial.value && passwordHasLength.value,
-);
+const isPasswordValid = computed(() => passwordResult.value.success);
 
-const isNameValid = computed(() => displayName.value.trim().length >= 2);
+const nameSchema = z.string().trim().min(2);
+const isNameValid = computed(() => nameSchema.safeParse(displayName.value).success);
 const isDobComplete = computed(
 	() => birthDay.value.trim() !== '' && birthMonth.value.trim() !== '' && birthYear.value.trim() !== '',
 );
 const currentYear = new Date().getFullYear();
-const isDobValid = computed(() => {
-	if (!isDobComplete.value) {
-		return false;
-	}
+const dobSchema = z
+	.object({
+		day: z.string().trim(),
+		month: z.string().trim(),
+		year: z.string().trim(),
+	})
+	.superRefine((value, ctx) => {
+		if (!value.day || !value.month || !value.year) {
+			ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Incomplete date of birth.' });
+			return;
+		}
 
-	const day = Number.parseInt(birthDay.value, 10);
-	const month = Number.parseInt(birthMonth.value, 10);
-	const year = Number.parseInt(birthYear.value, 10);
-	if (!day || !month || !year) {
-		return false;
-	}
+		const day = Number.parseInt(value.day, 10);
+		const month = Number.parseInt(value.month, 10);
+		const year = Number.parseInt(value.year, 10);
+		if (!day || !month || !year) {
+			ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid date of birth.' });
+			return;
+		}
 
-	if (year < 1900 || year > currentYear) {
-		return false;
-	}
+		if (year < 1900 || year > currentYear) {
+			ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid date of birth.' });
+			return;
+		}
 
-	const candidate = new Date(year, month - 1, day);
-	return (
-		candidate.getFullYear() === year &&
-		candidate.getMonth() === month - 1 &&
-		candidate.getDate() === day
-	);
-});
+		const candidate = new Date(year, month - 1, day);
+		if (
+			candidate.getFullYear() !== year ||
+			candidate.getMonth() !== month - 1 ||
+			candidate.getDate() !== day
+		) {
+			ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid date of birth.' });
+		}
+	});
+const dobResult = computed(() =>
+	dobSchema.safeParse({
+		day: birthDay.value,
+		month: birthMonth.value,
+		year: birthYear.value,
+	}),
+);
+const isDobValid = computed(() => dobResult.value.success);
 const dobError = computed(() => {
 	if (!touched.value.dob) {
 		return '';
@@ -98,7 +128,8 @@ const dobError = computed(() => {
 
 	return '';
 });
-const isGenderValid = computed(() => gender.value !== '');
+const genderSchema = z.enum(['man', 'woman', 'non-binary', 'other', 'prefer-not']);
+const isGenderValid = computed(() => genderSchema.safeParse(gender.value).success);
 const isProfileValid = computed(() => isNameValid.value && isDobValid.value && isGenderValid.value);
 
 const stepIndex = computed(() => {
