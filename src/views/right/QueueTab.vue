@@ -66,7 +66,7 @@ const isCurrentTrack = (trackUri: string) => currentTrackUri.value === trackUri;
     align-items: flex-end;
     justify-content: space-between;
     gap: 1rem;
-    margin: 0.5rem 0 0 0;
+    margin: 0.5rem 0 0 1rem;
     height: 2.5rem;
     align-items: center;
 }

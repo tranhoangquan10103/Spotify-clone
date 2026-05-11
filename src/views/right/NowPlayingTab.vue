@@ -34,12 +34,14 @@ const creditsVisible = ref(false);
                 <p>Now Playing</p>
             </div>
             <div class="canvas-container">
-                <p class="song-name">{{ nowPlaying.title }}</p>
-                <p class="song-name artist-name">{{ nowPlaying.artist }}</p>
                 <video autoplay loop muted class="canvas">
                     <source :src="nowPlaying.videoSrc" type="video/mp4" />
                 </video>
                 <div class="inline-shadow"></div>
+            </div>
+            <div class="track-meta">
+                <p class="song-name track-title">{{ nowPlaying.title }}</p>
+                <p class="song-name artist-name track-artist">{{ nowPlaying.artist }}</p>
             </div>
             <div class="artist-card" @click="artistVisible = true">
                 <Dialog v-model:visible="artistVisible" modal class="artist-dialog" :closable="false" :showHeader="false">
@@ -48,23 +50,23 @@ const creditsVisible = ref(false);
                 <Dialog v-model:visible="creditsVisible" modal class="credits-dialog" :closable="false" :showHeader="false">
                     <CreditsDialog @close="creditsVisible = false" />
                 </Dialog>
-                <div class="artist-card-header">
-                    <div class="image-header" :style="{ backgroundImage: `url('${nowPlaying.artistImage}')` }"></div>
+                <div class="artist-card-about">
                     <p class="image-badge">About the artist</p>
-                </div>
-                <div class="artist-card-body">
-                    <div class="about-body-title">Artist Name</div>
-                    <div class="about-body-content">
-                        <div class="about-body-info">
-                            <div class="revenue">
-                                <p>{{ nowPlaying.listeners }}</p>
+                    <div class="image-header" :style="{ backgroundImage: `url('${nowPlaying.artistImage}')` }"></div>
+                    <div class="artist-card-body">
+                        <div class="about-body-title">Artist Name</div>
+                        <div class="about-body-content">
+                            <div class="about-body-info">
+                                <div class="revenue">
+                                    <p>{{ nowPlaying.listeners }}</p>
+                                </div>
+                                <Button label="Follow" class="follow-button" outlined />
                             </div>
-                            <Button label="Follow" class="follow-button" outlined />
+                            <p class="m-0">
+                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur error repudiandae numquam deserunt quisquam repellat libero asperiores earum nam nobis, culpa ratione quam perferendis esse, cupiditate neque
+                                quas!
+                            </p>
                         </div>
-                        <p class="m-0">
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur error repudiandae numquam deserunt quisquam repellat libero asperiores earum nam nobis, culpa ratione quam perferendis esse, cupiditate neque
-                            quas!
-                        </p>
                     </div>
                 </div>
             </div>
@@ -118,7 +120,7 @@ const creditsVisible = ref(false);
 
 .canvas-container{
     width: 100%;
-    margin: 0 0 30rem;
+    margin: 0 0 25rem;
     z-index: -1;
 }
 
@@ -156,6 +158,20 @@ const creditsVisible = ref(false);
     color: #b3b3b3;
 }
 
+.track-meta {
+    padding: 0.75rem 1rem 0.35rem;
+}
+
+.track-meta .song-name {
+    position: static;
+    bottom: auto;
+    margin: 0;
+}
+
+.track-meta .artist-name {
+    margin: 0;
+}
+
 .now-playing-scroll{
 	flex: 1 1 auto;
 	flex-direction: column;
@@ -177,15 +193,16 @@ const creditsVisible = ref(false);
     width: calc(100% - 2rem);
     overflow: hidden;
     border-radius: 0.5rem;
-    background-color: #1F1F1F;
+    background-color: transparent;
     z-index: 1;
     margin: 0 1rem;
     cursor: pointer;
     margin-bottom: 1rem;
 }
 
-.artist-card-header {
-    position: relative;
+.artist-card-about {
+    display: flex;
+    flex-direction: column;
 }
 
 .image-header{
@@ -212,21 +229,19 @@ const creditsVisible = ref(false);
 }
 
 .image-badge{
-    position: absolute;
-    top: 0;
-    left: 0;
     color: #ffffff;
     font-size: 1.2rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-}
-
-p.image-badge{
-    margin: 0.8rem;
+    margin: 0;
+    padding: 0.8rem 1rem 0;
+    position: absolute;
+    z-index: 1;
 }
 
 .artist-card-body {
     padding: 1rem;
+    background: #1F1F1F;
 }
 
 .about-body-title {

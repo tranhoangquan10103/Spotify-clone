@@ -3,14 +3,15 @@
 </script>
 
 <template>
-    <h1>Connect to a device</h1>
+    <h2 class="connect-header">Connect to a device</h2>
 </template>
 
 <style>
-h1{
-    font-family: "Fraunces", "Times New Roman", serif;
-    font-size: clamp(2.4rem, 4vw, 3.6rem);
-    margin: 0 0 0.6rem;
+.connect-header{
+    font: 1.5rem 'Spotify Circular', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
     color: #fff;
+    margin: 1.5rem 0 0 1rem;
 }
 </style>
