@@ -458,10 +458,10 @@ const toggleCreate = () => {
 }
 
 .library-item {
-	width: 100%;
+	width: calc(100% - 1rem);
 	display: flex;
 	align-items: center;
-	gap: 0.8rem;
+	gap: 1rem;
 	padding: 0.45rem 0.5rem;
 	margin-bottom: 0.2rem;
 	border: none;

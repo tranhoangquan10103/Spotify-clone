@@ -468,7 +468,7 @@ onBeforeUnmount(() => {
 }
 
 .player-btn.is-active {
-	background: rgba(30, 215, 96, 0.14);
+	background: rgb(0, 84, 29);
 }
 
 .player-play-btn {

@@ -540,7 +540,6 @@ body {
 .center-panel {
   background: #121212;
   border-radius: 9px;
-  padding: 10px;
   overflow: hidden;
   min-width: 0;
 }
@@ -553,6 +552,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  padding: 0.9rem 0 0 0.5rem;
 }
 
 .layout-resizer {
