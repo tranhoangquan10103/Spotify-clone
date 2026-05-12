@@ -44,7 +44,6 @@ const updateMedia = async () => {
 
 	// Try to find canvas video
 	const videoFileName = `${sanitizeTrackName(nowPlaying.value.title)} - ${nowPlaying.value.artists.join('; ')}.mp4`;
-	const canvasVideoPath = `../../songs/canvas/${videoFileName}`;
 
 	// Check if video exists in imported modules
 	let videoExists = false;
@@ -106,7 +105,7 @@ const credits = [
                         <div class="about-body-content">
                             <div class="about-body-info">
                                 <div class="revenue">
-                                    <p>Listeners</p>
+                                    <p> 131,950,433 Listeners</p>
                                 </div>
                                 <Button label="Follow" class="follow-button" outlined />
                             </div>
@@ -217,6 +216,8 @@ const credits = [
 
 .track-meta .artist-name {
     margin: 0;
+    font-weight: 500;
+    font-size: 1rem;
 }
 
 .now-playing-scroll{
