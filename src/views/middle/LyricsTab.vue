@@ -35,8 +35,6 @@ const scrollToCurrentLyric = () => {
 		const containerHeight = container.clientHeight;
 		const lineTop = currentLine.offsetTop;
 		const lineHeight = currentLine.clientHeight;
-
-		// Scroll to center the current line
 		const scrollTop = lineTop - containerHeight / 2 + lineHeight / 2;
 		container.scrollTop = Math.max(0, scrollTop);
 	}
@@ -65,9 +63,9 @@ onUnmounted(() => {
 const hasLyrics = computed(() => allLyrics.value.length > 0);
 const noLyricsMessage = computed(() => {
 	if (isLoading.value) return 'Loading lyrics...';
-	if (error.value) return `Lyrics not available`;
-	if (!playerStore.currentTrack) return 'Play a song to see lyrics';
-	return 'No lyrics available for this song';
+	if (error.value) return `You caught us, we're still working on getting lyrics for this song`;
+	if (!playerStore.currentTrack) return `No track is currently playing`;
+	return `You caught us, we're still working on getting lyrics for this song`;
 });
 </script>
 
@@ -97,7 +95,7 @@ const noLyricsMessage = computed(() => {
 	height: 100%;
     width: 100%;
 	overflow: hidden;
-	background: #003755;
+	background: #015500;
 }
 
 h2 {
@@ -114,10 +112,10 @@ h2 {
 	align-items: center;
 	justify-content: center;
 	flex: 1;
-	color: #A1D4F8;
-	font-size: 6rem;
+	color: #a1f8a2;
+	font-size: 4.5rem;
     font-weight: 700;
-	padding: 2rem;
+	padding: 0 2rem;
 	text-align: center;
 }
 
@@ -139,7 +137,7 @@ h2 {
 .lyric-line {
 	font-size: 1.9rem;
 	line-height: 1.5;
-	color: #A1D4F8;
+	color: #a1f8a2;
 	text-align: left;
 	transition: all 0.3s ease;
 	padding: 0.5rem;

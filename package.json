@@ -14,6 +14,7 @@
     "@tanstack/vue-query": "^5.100.5",
     "@tanstack/vue-query-devtools": "^6.1.24",
     "@types/papaparse": "^5.5.2",
+    "music-metadata": "^11.12.3",
     "music-metadata-browser": "^2.5.11",
     "papaparse": "^5.5.3",
     "pinia": "^3.0.4",
