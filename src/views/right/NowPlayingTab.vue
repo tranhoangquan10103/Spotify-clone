@@ -1,29 +1,78 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { usePlayerStore } from '../../stores/usePlayerStore';
 import ScrollBar from '../../components/Scrollbar.vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import ArtistDialog from '../../components/ArtistDialog.vue';
 import CreditsDialog from '../../components/CreditsDialog.vue';
 
-const rhinestoneEyesVideo = new URL('../../songs/canvas/Rhinestone Eyes.mp4', import.meta.url).href;
+const playerStore = usePlayerStore();
+const artistVisible = ref(false);
+const creditsVisible = ref(false);
+const isVideo = ref(false);
+const mediaUrl = ref('');
 
-const nowPlaying = {
-    title: 'Rhinestone Eyes',
-    artist: 'Gorillaz',
-    videoSrc: rhinestoneEyesVideo,
-    artistImage: 'https://i.scdn.co/image/ab67616d00001e02622aefd794f6fe4d8e714358',
-    listeners: '55,456,379 Monthly Listeners',
+// Import all canvas videos
+const canvasVideos = import.meta.glob<string>('../../songs/canvas/*.mp4', { query: '?url', import: 'default' });
+
+const sanitizeTrackName = (name: string) => name.replace(/"/g, '').trim();
+
+const buildCanvasUrl = (trackName: string, artists: string[]) => {
+	const fileName = `${sanitizeTrackName(trackName)} - ${artists.join('; ')}.mp4`;
+	return new URL(`../../songs/canvas/${fileName}`, import.meta.url).href;
 };
+
+const nowPlaying = computed(() => {
+	const track = playerStore.currentTrack;
+	if (!track) {
+		return null;
+	}
+
+	return {
+		title: track.trackName,
+		artist: track.artistsText,
+		coverUrl: track.coverUrl,
+		artists: track.artists,
+	};
+});
+
+const updateMedia = async () => {
+	if (!nowPlaying.value) {
+		return;
+	}
+
+	// Try to find canvas video
+	const videoFileName = `${sanitizeTrackName(nowPlaying.value.title)} - ${nowPlaying.value.artists.join('; ')}.mp4`;
+	const canvasVideoPath = `../../songs/canvas/${videoFileName}`;
+
+	// Check if video exists in imported modules
+	let videoExists = false;
+	for (const [path] of Object.entries(canvasVideos)) {
+		if (path.includes(videoFileName)) {
+			isVideo.value = true;
+			mediaUrl.value = buildCanvasUrl(nowPlaying.value.title, nowPlaying.value.artists);
+			videoExists = true;
+			break;
+		}
+	}
+
+	// Fallback to cover image if video doesn't exist
+	if (!videoExists) {
+		isVideo.value = false;
+		mediaUrl.value = nowPlaying.value.coverUrl;
+	}
+};
+
+watch(() => playerStore.currentTrack, () => {
+	updateMedia();
+}, { immediate: true });
 
 const credits = [
     { name: 'Gorillaz', role: 'Main Artist • Producer • Bass', canFollow: true },
     { name: 'Shane Boose', role: 'Writer', canFollow: false },
     { name: 'Gregg White', role: 'Recording Engineer', canFollow: false },
 ];
-
-const artistVisible = ref(false);
-const creditsVisible = ref(false);
     
 </script>
 
@@ -34,14 +83,13 @@ const creditsVisible = ref(false);
                 <p>Now Playing</p>
             </div>
             <div class="canvas-container">
-                <video autoplay loop muted class="canvas">
-                    <source :src="nowPlaying.videoSrc" type="video/mp4" />
-                </video>
+                <video v-if="isVideo" :key="mediaUrl" :src="mediaUrl" autoplay loop muted class="canvas" />
+                <img v-else :src="mediaUrl" class="canvas" alt="Cover" />
                 <div class="inline-shadow"></div>
             </div>
             <div class="track-meta">
-                <p class="song-name track-title">{{ nowPlaying.title }}</p>
-                <p class="song-name artist-name track-artist">{{ nowPlaying.artist }}</p>
+                <p class="song-name track-title">{{ nowPlaying?.title || 'N/A' }}</p>
+                <p class="song-name artist-name track-artist">{{ nowPlaying?.artist || 'N/A' }}</p>
             </div>
             <div class="artist-card" @click="artistVisible = true">
                 <Dialog v-model:visible="artistVisible" modal class="artist-dialog" :closable="false" :showHeader="false">
@@ -52,13 +100,13 @@ const creditsVisible = ref(false);
                 </Dialog>
                 <div class="artist-card-about">
                     <p class="image-badge">About the artist</p>
-                    <div class="image-header" :style="{ backgroundImage: `url('${nowPlaying.artistImage}')` }"></div>
+                    <div class="image-header" :style="{ backgroundImage: `url('${nowPlaying?.coverUrl}')` }"></div>
                     <div class="artist-card-body">
-                        <div class="about-body-title">Artist Name</div>
+                        <div class="about-body-title">{{ nowPlaying?.artist || 'Artist' }}</div>
                         <div class="about-body-content">
                             <div class="about-body-info">
                                 <div class="revenue">
-                                    <p>{{ nowPlaying.listeners }}</p>
+                                    <p>Listeners</p>
                                 </div>
                                 <Button label="Follow" class="follow-button" outlined />
                             </div>
@@ -128,14 +176,13 @@ const creditsVisible = ref(false);
     position: absolute;
     inset: 0;
     background: #121212;
-    background: linear-gradient(0deg, rgba(18, 18, 18, 1) 0%, rgba(255, 255, 255, 0) 23%, rgba(255, 255, 255, 0) 83%, rgba(18, 18, 18, 0.73) 100%);
-    z-index: 0;
+    background: linear-gradient(0deg,rgba(18, 18, 18, 1) 0%, rgba(255, 255, 255, 0) 44%, rgba(255, 255, 255, 0) 72%, rgba(18, 18, 18, 1) 100%);
 }
 
 .canvas {
     position: absolute;
     height: 100%;
-    width: 100%;
+    width: calc(100% - 2rem);
     z-index: 0;
     object-fit: cover;
     box-shadow: inset 0px 0px 20px 5px rgba(0,0,0,0.5);

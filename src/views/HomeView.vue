@@ -58,6 +58,10 @@ watch(
   () => songs.value ?? [],
   (tracks) => {
     playerStore.setQueue(tracks);
+    // Set the first track as current track if not already set
+    if (tracks.length > 0 && !playerStore.currentTrack) {
+      playerStore.setCurrentTrack(tracks[0]);
+    }
   },
   { immediate: true },
 );
