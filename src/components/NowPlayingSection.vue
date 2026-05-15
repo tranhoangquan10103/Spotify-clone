@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import { usePlayerStore } from '../stores/usePlayerStore';
+import NowPlayingTransportControls from './NowPlayingTransportControls.vue';
+import NowPlayingUtilityControls from './NowPlayingUtilityControls.vue';
 
 type RightTab = 'nowPlaying' | 'queue' | 'connect';
 type MiddleTab = 'album' | 'artist' | 'feed' | 'lyrics' | 'profile' | 'recents' | 'settings' | 'track' | 'trackdetail';
@@ -18,32 +20,14 @@ const emit = defineEmits<{
 
 const playerStore = usePlayerStore();
 const audioRef = ref<HTMLAudioElement | null>(null);
-const progressBarRef = ref<HTMLDivElement | null>(null);
 const isPlaying = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
-const isScrubbing = ref(false);
 const volumeStorageKey = 'spotify-player-volume';
 const previousVolumeStorageKey = 'spotify-player-previous-volume';
 const volume = ref(100);
 const previousVolume = ref(100);
 const isMuted = computed(() => volume.value === 0);
-const volumeIconName = computed(() => {
-	if (volume.value === 0) {
-		return 'muted';
-	}
-
-	if (volume.value <= 33) {
-		return 'volume-1';
-	}
-
-	if (volume.value <= 66) {
-		return 'volume-2';
-	}
-
-	return 'volume-3';
-});
-const volumeIconUrl = computed(() => getSvgUrl(volumeIconName.value));
 const fallbackCoverUrl = 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW1wdmIwamRsMWs0MHdwdWdnMnM3b2F4andudXhkdmZkMHM4a2RxZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/bdcVgamzkEGNB2hAl6/giphy.gif';
 
 const getSvgUrl = (name: string) => new URL(`../assets/svg/${name}.svg`, import.meta.url).href;
@@ -108,7 +92,7 @@ const syncDuration = () => {
 
 const handleTimeUpdate = () => {
 	const audio = audioRef.value;
-	if (!audio || isScrubbing.value) {
+	if (!audio) {
 		return;
 	}
 
@@ -192,13 +176,7 @@ const initializeVolume = () => {
 	persistPreviousVolume(previousVolume.value);
 };
 
-const handleVolumeInput = (event: Event) => {
-	const input = event.target as HTMLInputElement | null;
-	if (!input) {
-		return;
-	}
-
-	const nextVolume = Number(input.value);
+const handleVolumeInput = (nextVolume: number) => {
 	if (!Number.isFinite(nextVolume)) {
 		return;
 	}
@@ -274,56 +252,15 @@ const togglePlay = async () => {
 	audio.pause();
 };
 
-const seekToClientX = (clientX: number) => {
-	const bar = progressBarRef.value;
+const seekToTime = (nextTime: number) => {
 	const audio = audioRef.value;
-	if (!bar || !audio) {
+	if (!audio || !resolvedDuration.value) {
 		return;
 	}
 
-	const rect = bar.getBoundingClientRect();
-	if (rect.width <= 0) {
-		return;
-	}
-
-	const clampedX = Math.min(rect.width, Math.max(0, clientX - rect.left));
-	const total = resolvedDuration.value;
-	if (!total) {
-		return;
-	}
-
-	const nextTime = (clampedX / rect.width) * total;
-	audio.currentTime = nextTime;
-	currentTime.value = nextTime;
-};
-
-const onProgressPointerMove = (event: PointerEvent) => {
-	if (!isScrubbing.value) {
-		return;
-	}
-
-	seekToClientX(event.clientX);
-};
-
-const onProgressPointerUp = () => {
-	if (!isScrubbing.value) {
-		return;
-	}
-
-	isScrubbing.value = false;
-	window.removeEventListener('pointermove', onProgressPointerMove);
-	window.removeEventListener('pointerup', onProgressPointerUp);
-};
-
-const onProgressPointerDown = (event: PointerEvent) => {
-	if (!resolvedDuration.value) {
-		return;
-	}
-
-	isScrubbing.value = true;
-	seekToClientX(event.clientX);
-	window.addEventListener('pointermove', onProgressPointerMove);
-	window.addEventListener('pointerup', onProgressPointerUp);
+	const clampedTime = Math.min(resolvedDuration.value, Math.max(0, nextTime));
+	audio.currentTime = clampedTime;
+	currentTime.value = clampedTime;
 };
 
 watch(
@@ -380,11 +317,6 @@ watch(
 onMounted(() => {
 	initializeVolume();
 });
-
-onBeforeUnmount(() => {
-	window.removeEventListener('pointermove', onProgressPointerMove);
-	window.removeEventListener('pointerup', onProgressPointerUp);
-});
 </script>
 
 <template>
@@ -415,99 +347,32 @@ onBeforeUnmount(() => {
 			</div>
 		</div>
 
-		<div class="now-playing-center">
-			<button v-tooltip.top="{ value: 'Shuffle', showDelay: 300 }" class="player-btn" type="button" aria-label="Shuffle" :class="{ 'is-active': isShuffleActive }" @click="toggleShuffle">
-				<img alt="Shuffle" src="../assets/svg/shuffle.svg">
-			</button>
-			<button v-tooltip.top="{ value: 'Previous', showDelay: 300 }" class="player-btn" type="button" aria-label="Previous" @click="skipPrevious">
-				<img alt="Previous" src="../assets/svg/skip-previous.svg">
-			</button>
-			<button
-				v-tooltip.top="{ value: playPauseLabel, showDelay: 300 }"
-				class="player-btn player-play-btn"
-				type="button"
-				:aria-label="playPauseLabel"
-				:disabled="!currentTrack"
-				@click="togglePlay"
-			>
-				<img :alt="playPauseLabel" :src="playPauseIcon">
-			</button>
-			<button v-tooltip.top="{ value: 'Next', showDelay: 300 }" class="player-btn" type="button" aria-label="Next" @click="skipNext">
-				<img alt="Next" src="../assets/svg/skip-next.svg">
-			</button>
-			<button v-tooltip.top="{ value: repeatLabel, showDelay: 300 }" class="player-btn" type="button" :aria-label="repeatLabel" :class="{ 'is-active': playerStore.repeatMode !== 'off' }" @click="toggleRepeat">
-				<img alt="Repeat" src="../assets/svg/repeat.svg">
-			</button>
-		</div>
-
-		<div class="now-playing-progress-container">
-			<span class="now-playing-time">{{ currentTimeLabel }}</span>
-			<div
-				class="now-playing-progress-bar"
-				ref="progressBarRef"
-				@pointerdown="onProgressPointerDown"
-			>
-				<div class="now-playing-progress-fill" :style="{ width: `${progressPercent}%` }"></div>
-				<div class="now-playing-progress-handle" :style="{ left: `${progressPercent}%` }"></div>
-			</div>
-			<span class="now-playing-time">{{ durationLabel }}</span>
-		</div>
-
-		<div class="now-playing-right">
-			<button
-				v-tooltip.top="{ value: 'Lyrics', showDelay: 300 }"
-				class="player-btn now-playing-icon-button icon-lyrics"
-				type="button"
-				aria-label="Lyrics"
-				:aria-pressed="props.activeMiddleTab === 'lyrics'"
-				@click="emit('toggle-middle-tab', 'lyrics')"
-			></button>
-			<button
-				v-tooltip.top="{ value: 'Queue', showDelay: 300 }"
-				class="player-btn now-playing-icon-button icon-queue"
-				type="button"
-				aria-label="Queue"
-				:aria-pressed="props.activeRightTab === 'queue'"
-				@click="emit('toggle-right-tab', 'queue')"
-			></button>
-			<button
-				v-tooltip.top="{ value: 'Connect to a device', showDelay: 300 }"
-				class="player-btn now-playing-icon-button icon-connect"
-				type="button"
-				aria-label="Connect to a device"
-				:aria-pressed="props.activeRightTab === 'connect'"
-				@click="emit('toggle-right-tab', 'connect')"
-			></button>
-			<div class="volume-control">
-				<button
-					v-tooltip.top="{ value: isMuted ? 'Unmute' : 'Mute', showDelay: 300 }"
-					class="volume-toggle-button"
-					type="button"
-					:aria-label="isMuted ? 'Unmute' : 'Mute'"
-					:aria-pressed="isMuted"
-					@click="toggleMute"
-				>
-					<img class="volume-icon" :alt="isMuted ? 'Muted' : 'Volume'" :src="volumeIconUrl">
-				</button>
-				<input
-					class="volume-slider"
-					type="range"
-					min="0"
-					max="100"
-					step="1"
-					:value="volume"
-					:style="{ '--volume-percent': `${volume}%` }"
-					aria-label="Volume"
-					:aria-valuenow="volume"
-					aria-valuemin="0"
-					aria-valuemax="100"
-					@input="handleVolumeInput"
-				/>
-			</div>
-			<button v-tooltip.top="{ value: 'Mini player', showDelay: 300 }" class="player-btn" type="button" aria-label="Mini player">
-				<img alt="Mini player" src="../assets/svg/mini-player.svg">
-			</button>
-		</div>
+		<NowPlayingTransportControls
+			:is-shuffle-active="isShuffleActive"
+			:play-pause-label="playPauseLabel"
+			:play-pause-icon="playPauseIcon"
+			:repeat-label="repeatLabel"
+			:current-time-label="currentTimeLabel"
+			:duration-label="durationLabel"
+			:progress-percent="progressPercent"
+			:resolved-duration="resolvedDuration"
+			:has-track="!!currentTrack"
+			@toggle-shuffle="toggleShuffle"
+			@skip-previous="skipPrevious"
+			@toggle-play="togglePlay"
+			@skip-next="skipNext"
+			@toggle-repeat="toggleRepeat"
+			@seek="seekToTime"
+		/>
+		<NowPlayingUtilityControls
+			:active-right-tab="activeRightTab"
+			:active-middle-tab="activeMiddleTab"
+			:volume="volume"
+			@toggle-right-tab="emit('toggle-right-tab', $event)"
+			@toggle-middle-tab="emit('toggle-middle-tab', $event)"
+			@toggle-mute="toggleMute"
+			@volume-input="handleVolumeInput"
+		/>
 
 		<audio
 			ref="audioRef"
@@ -518,7 +383,7 @@ onBeforeUnmount(() => {
 			@durationchange="syncDuration"
 			@play="handlePlay"
 			@pause="handlePause"
-				@volumechange="handleVolumeChange"
+			@volumechange="handleVolumeChange"
 			@ended="handleEnded"
 			class="now-playing-audio"
 		></audio>
@@ -596,15 +461,6 @@ onBeforeUnmount(() => {
 	color: #1ed760;
 }
 
-.now-playing-center {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 1rem;
-	grid-column: 2;
-	grid-row: 1;
-}
-
 .player-btn {
 	width: 2.5rem;
 	height: 2.5rem;
@@ -644,275 +500,7 @@ onBeforeUnmount(() => {
 	background: #ffffff;
 }
 
-.now-playing-progress-container {
-	display: flex;
-	align-items: center;
-	gap: 0.8rem;
-	grid-column: 2;
-	grid-row: 2;
-	width: 100%;
-}
-
-.now-playing-time {
-	font-size: 0.75rem;
-	color: #b3b3b3;
-	min-width: 2.5rem;
-	text-align: center;
-}
-
-.now-playing-progress-bar {
-	flex: 1;
-	height: 4px;
-	background: #404040;
-	border-radius: 2px;
-	cursor: pointer;
-	position: relative;
-	display: flex;
-	align-items: center;
-	touch-action: none;
-}
-
-.now-playing-progress-bar:hover {
-	height: 6px;
-}
-
-.now-playing-progress-fill {
-	height: 100%;
-	background: #ffffff;
-	border-radius: 2px;
-	transition: width 0.1s, background-color 0.2s;
-}
-
-.now-playing-progress-bar:hover .now-playing-progress-fill {
-	background: #1db954;
-}
-
-.now-playing-progress-handle {
-	width: 12px;
-	height: 12px;
-	background: #fff;
-	border-radius: 50%;
-	position: absolute;
-	top: 50%;
-	left: 0;
-	transform: translate(-50%, -50%);
-	opacity: 0;
-	transition: opacity 0.2s;
-	pointer-events: none;
-}
-
-.now-playing-progress-bar:hover .now-playing-progress-handle {
-	opacity: 1;
-}
-
 .now-playing-audio {
 	display: none;
-}
-
-.now-playing-right {
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	gap: 0.6rem;
-	grid-row: 1 / -1;
-	color: #b3b3b3;
-	min-width: 0;
-	flex-wrap: nowrap;
-}
-
-.now-playing-right i {
-	cursor: pointer;
-	transition: color 0.2s;
-	font-size: 1rem;
-}
-
-.now-playing-right i:hover {
-	color: #1ed760;
-}
-
-.now-playing-right .player-btn {
-	width: 2rem;
-	height: 2rem;
-	font-size: 0.95rem;
-}
-
-.now-playing-icon-button {
-	padding: 0;
-	background-color: #ffffff !important;
-	transition: background-color 0.2s ease, transform 0.1s ease;
-	-webkit-mask-repeat: no-repeat;
-	mask-repeat: no-repeat;
-	-webkit-mask-position: center;
-	mask-position: center;
-	-webkit-mask-size: 16px 16px;
-	mask-size: 16px 16px;
-}
-
-.now-playing-icon-button[aria-pressed='true'] {
-	background-color: #1ed760 !important;
-}
-
-.now-playing-icon-button:not([aria-pressed='true']):hover {
-	background-color: #ffffff !important;
-}
-
-.now-playing-icon-button:hover {
-	transform: scale(1.05);
-}
-
-.icon-lyrics {
-	-webkit-mask-image: url('../assets/svg/lyrics.svg');
-	mask-image: url('../assets/svg/lyrics.svg');
-}
-
-.icon-queue {
-	-webkit-mask-image: url('../assets/svg/queue.svg');
-	mask-image: url('../assets/svg/queue.svg');
-}
-
-.icon-connect {
-	-webkit-mask-image: url('../assets/svg/connect-device.svg');
-	mask-image: url('../assets/svg/connect-device.svg');
-}
-
-.volume-control {
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	flex: 0 1 6.55rem;
-	min-width: 5.35rem;
-	max-width: 6.7rem;
-	overflow: hidden;
-}
-
-.volume-toggle-button {
-	width: 1.1rem;
-	height: 1.1rem;
-	border: none;
-	background: transparent;
-	color: #ffffff;
-	padding: 0;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex: 0 0 auto;
-	cursor: pointer;
-	transition: color 0.2s ease;
-}
-
-.volume-toggle-button:hover {
-	color: #ffffff;
-}
-
-.volume-icon {
-	width: 1.1rem;
-	height: 1.1rem;
-	flex: 0 0 auto;
-	filter: brightness(0) saturate(0%) invert(72%);
-	transition: filter 0.2s ease, color 0.2s ease;
-}
-
-.volume-toggle-button:hover .volume-icon {
-	filter: brightness(0) saturate(0%) invert(100%);
-}
-
-.volume-slider {
-	width: 100%;
-	min-width: 0;
-	height: 20px;
-	padding: 0;
-	border: none;
-	background: transparent;
-	cursor: pointer;
-	appearance: none;
-	-webkit-appearance: none;
-	--volume-fill-color: #ffffff;
-	--volume-track-color: #404040;
-	--volume-thumb-opacity: 0;
-	--volume-thumb-scale: 0.88;
-	cursor: pointer;
-}
-
-.volume-control:hover .volume-slider,
-.volume-slider:focus-visible {
-	--volume-fill-color: #1db954;
-	--volume-thumb-opacity: 1;
-	--volume-thumb-scale: 1;
-}
-
-.volume-slider::-webkit-slider-runnable-track {
-	height: 4px;
-	border-radius: 999px;
-	background: linear-gradient(to right, var(--volume-fill-color) 0 var(--volume-percent), var(--volume-track-color) var(--volume-percent) 100%);
-	transition: background 0.2s ease;
-}
-
-.volume-slider::-webkit-slider-thumb {
-	-webkit-appearance: none;
-	appearance: none;
-	width: 12px;
-	height: 12px;
-	margin-top: -4px;
-	border: none;
-	border-radius: 50%;
-	background: #ffffff;
-	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
-	opacity: var(--volume-thumb-opacity);
-	transform: scale(var(--volume-thumb-scale));
-	transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.volume-slider::-moz-range-track {
-	height: 4px;
-	border: none;
-	border-radius: 999px;
-	background: var(--volume-track-color);
-}
-
-.volume-slider::-moz-range-progress {
-	height: 4px;
-	border: none;
-	border-radius: 999px;
-	background: var(--volume-fill-color);
-}
-
-.volume-slider::-moz-range-thumb {
-	width: 12px;
-	height: 12px;
-	border: none;
-	border-radius: 50%;
-	background: #ffffff;
-	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
-	opacity: var(--volume-thumb-opacity);
-	transform: scale(var(--volume-thumb-scale));
-	transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.volume-slider::-ms-track {
-	height: 4px;
-	border-color: transparent;
-	color: transparent;
-	background: transparent;
-}
-
-.volume-slider::-ms-fill-lower {
-	background: var(--volume-fill-color);
-	border-radius: 999px;
-}
-
-.volume-slider::-ms-fill-upper {
-	background: var(--volume-track-color);
-	border-radius: 999px;
-}
-
-.volume-slider::-ms-thumb {
-	width: 12px;
-	height: 12px;
-	border: none;
-	border-radius: 50%;
-	background: #ffffff;
-	opacity: var(--volume-thumb-opacity);
-	transform: scale(var(--volume-thumb-scale));
-	transition: opacity 0.15s ease, transform 0.15s ease;
 }
 </style>
