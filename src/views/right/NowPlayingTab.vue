@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { usePlayerStore } from '../../stores/usePlayerStore';
 import ScrollBar from '../../components/Scrollbar.vue';
 import Button from 'primevue/button';
@@ -12,11 +12,20 @@ const artistVisible = ref(false);
 const creditsVisible = ref(false);
 const isVideo = ref(false);
 const mediaUrl = ref('');
+const canvasVideoRef = ref<HTMLVideoElement | null>(null);
+const audioElementRef = ref<HTMLAudioElement | null>(null);
+const isSyncingPlayback = ref(false);
 
 // Import all canvas videos
 const canvasVideos = import.meta.glob<string>('../../songs/canvas/*.mp4', { query: '?url', import: 'default' });
 
 const sanitizeTrackName = (name: string) => name.replace(/"/g, '').trim();
+
+const getAudioElement = () => document.querySelector('audio.now-playing-audio') as HTMLAudioElement | null;
+
+const clearPlaybackSync = () => {
+    isSyncingPlayback.value = false;
+};
 
 const buildCanvasUrl = (trackName: string, artists: string[]) => {
 	const fileName = `${sanitizeTrackName(trackName)} - ${artists.join('; ')}.mp4`;
@@ -36,6 +45,102 @@ const nowPlaying = computed(() => {
 		artists: track.artists,
 	};
 });
+
+const bindAudioPlaybackListeners = () => {
+    const audio = getAudioElement();
+    if (!audio || audioElementRef.value === audio) {
+        return;
+    }
+
+    if (audioElementRef.value) {
+        audioElementRef.value.removeEventListener('play', handleAudioPlay);
+        audioElementRef.value.removeEventListener('pause', handleAudioPause);
+        audioElementRef.value.removeEventListener('ended', handleAudioPause);
+    }
+
+    audioElementRef.value = audio;
+    audio.addEventListener('play', handleAudioPlay);
+    audio.addEventListener('pause', handleAudioPause);
+    audio.addEventListener('ended', handleAudioPause);
+};
+
+const syncCanvasPlaybackFromAudio = async () => {
+    const video = canvasVideoRef.value;
+    const audio = getAudioElement();
+    if (!video || !audio || !isVideo.value) {
+        return;
+    }
+
+    const shouldPlay = !audio.paused && !audio.ended;
+    const isVideoPlaying = !video.paused && !video.ended;
+    if (shouldPlay === isVideoPlaying) {
+        return;
+    }
+
+    isSyncingPlayback.value = true;
+
+    if (shouldPlay) {
+        try {
+            await video.play();
+        } catch {
+            clearPlaybackSync();
+            video.pause();
+        }
+        return;
+    }
+
+    video.pause();
+};
+
+const handleAudioPlay = () => {
+    if (isSyncingPlayback.value) {
+        clearPlaybackSync();
+        return;
+    }
+
+    void syncCanvasPlaybackFromAudio();
+};
+
+const handleAudioPause = () => {
+    if (isSyncingPlayback.value) {
+        clearPlaybackSync();
+        return;
+    }
+
+    void syncCanvasPlaybackFromAudio();
+};
+
+const handleCanvasPlay = () => {
+    if (isSyncingPlayback.value) {
+        clearPlaybackSync();
+        return;
+    }
+
+    const audio = getAudioElement();
+    if (!audio || !audio.paused) {
+        return;
+    }
+
+    isSyncingPlayback.value = true;
+    audio.play().catch(() => {
+        clearPlaybackSync();
+    });
+};
+
+const handleCanvasPause = () => {
+    if (isSyncingPlayback.value) {
+        clearPlaybackSync();
+        return;
+    }
+
+    const audio = getAudioElement();
+    if (!audio || audio.paused) {
+        return;
+    }
+
+    isSyncingPlayback.value = true;
+    audio.pause();
+};
 
 const updateMedia = async () => {
 	if (!nowPlaying.value) {
@@ -63,9 +168,24 @@ const updateMedia = async () => {
 	}
 };
 
-watch(() => playerStore.currentTrack, () => {
-	updateMedia();
-}, { immediate: true });
+watch(
+    () => playerStore.currentTrack,
+    async () => {
+        updateMedia();
+        await nextTick();
+        bindAudioPlaybackListeners();
+        await syncCanvasPlaybackFromAudio();
+    },
+    { immediate: true },
+);
+
+onBeforeUnmount(() => {
+    if (audioElementRef.value) {
+        audioElementRef.value.removeEventListener('play', handleAudioPlay);
+        audioElementRef.value.removeEventListener('pause', handleAudioPause);
+        audioElementRef.value.removeEventListener('ended', handleAudioPause);
+    }
+});
 
 const credits = [
     { name: 'Gorillaz', role: 'Main Artist • Producer • Bass', canFollow: true },
@@ -82,7 +202,19 @@ const credits = [
                 <p>Now Playing</p>
             </div>
             <div class="canvas-container">
-                <video v-if="isVideo" :key="mediaUrl" :src="mediaUrl" autoplay loop muted class="canvas" />
+                <video
+                    v-if="isVideo"
+                    ref="canvasVideoRef"
+                    :key="mediaUrl"
+                    :src="mediaUrl"
+                    loop
+                    muted
+                    playsinline
+                    class="canvas"
+                    @play="handleCanvasPlay"
+                    @pause="handleCanvasPause"
+                    @ended="handleCanvasPause"
+                />
                 <img v-else :src="mediaUrl" class="canvas" alt="Cover" />
                 <div class="inline-shadow"></div>
             </div>

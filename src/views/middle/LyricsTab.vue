@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useLyricsSync } from '../../composables/useLyricsSync';
 import { usePlayerStore } from '../../stores/usePlayerStore';
 
@@ -9,55 +9,179 @@ const lyricsContainerRef = ref<HTMLDivElement | null>(null);
 // Track current playback time
 const currentTime = ref(0);
 let timeTrackingId: number | null = null;
-let scrollUpdateId: number | null = null;
+let resumeAutoScrollTimeoutId: number | null = null;
+let autoScrollAnimationTimeoutId: number | null = null;
+let isProgrammaticScroll = false;
+const autoScrollDelayMs = 8000;
+const autoScrollAnimationMs = 700;
+const isPlaying = ref(false);
+
+const getAudioElement = () => document.querySelector('audio.now-playing-audio') as HTMLAudioElement | null;
 
 // Start tracking time
 const trackTime = () => {
-	const audio = document.querySelector('audio.now-playing-audio') as HTMLAudioElement | null;
+	const audio = getAudioElement();
 	if (audio) {
 		currentTime.value = audio.currentTime;
+		isPlaying.value = !audio.paused && !audio.ended;
+	} else {
+		isPlaying.value = false;
 	}
 	timeTrackingId = requestAnimationFrame(trackTime);
 };
 
 const { allLyrics, currentLyricIndex, isLoading, error } = useLyricsSync(() => currentTime.value);
 
+const clearResumeAutoScrollTimeout = () => {
+	if (resumeAutoScrollTimeoutId !== null) {
+		window.clearTimeout(resumeAutoScrollTimeoutId);
+		resumeAutoScrollTimeoutId = null;
+	}
+};
+
+const clearAutoScrollAnimationLock = () => {
+	if (autoScrollAnimationTimeoutId !== null) {
+		window.clearTimeout(autoScrollAnimationTimeoutId);
+		autoScrollAnimationTimeoutId = null;
+	}
+
+	isProgrammaticScroll = false;
+};
+
+const lockProgrammaticScroll = (animate: boolean) => {
+	clearAutoScrollAnimationLock();
+	isProgrammaticScroll = true;
+
+	if (!animate) {
+		requestAnimationFrame(() => {
+			isProgrammaticScroll = false;
+		});
+		return;
+	}
+
+	autoScrollAnimationTimeoutId = window.setTimeout(() => {
+		autoScrollAnimationTimeoutId = null;
+		isProgrammaticScroll = false;
+	}, autoScrollAnimationMs);
+};
+
+const lastUserScrollAt = ref(0);
+
+const shouldAutoScroll = () => isPlaying.value && Date.now() - lastUserScrollAt.value >= autoScrollDelayMs;
+
 // Auto-scroll to current lyric
-const scrollToCurrentLyric = () => {
+const scrollToCurrentLyric = (index = currentLyricIndex.value, animate = false) => {
 	const container = lyricsContainerRef.value;
 	if (!container) return;
 
 	const currentLines = container.querySelectorAll('.lyric-line');
-	const currentIndex = currentLyricIndex.value;
 
-	if (currentIndex >= 0 && currentIndex < currentLines.length) {
-		const currentLine = currentLines[currentIndex] as HTMLElement;
+	if (index >= 0 && index < currentLines.length) {
+		const currentLine = currentLines[index] as HTMLElement;
 		const containerHeight = container.clientHeight;
 		const lineTop = currentLine.offsetTop;
 		const lineHeight = currentLine.clientHeight;
 		const scrollTop = lineTop - containerHeight / 2 + lineHeight / 2;
-		container.scrollTop = Math.max(0, scrollTop);
+		const nextScrollTop = Math.max(0, scrollTop);
+
+		lockProgrammaticScroll(animate);
+
+		if (animate) {
+			container.scrollTo({
+				top: nextScrollTop,
+				behavior: 'smooth',
+			});
+			return;
+		}
+
+		container.scrollTop = nextScrollTop;
 	}
 };
 
-// Watch for changes in current lyric and scroll
-const updateScroll = () => {
-	scrollToCurrentLyric();
-	scrollUpdateId = requestAnimationFrame(updateScroll);
+const scheduleAutoScrollResume = () => {
+	clearResumeAutoScrollTimeout();
+	const elapsed = Date.now() - lastUserScrollAt.value;
+	const remainingDelay = Math.max(0, autoScrollDelayMs - elapsed);
+
+	resumeAutoScrollTimeoutId = window.setTimeout(() => {
+		resumeAutoScrollTimeoutId = null;
+		if (shouldAutoScroll()) {
+			scrollToCurrentLyric(currentLyricIndex.value, true);
+		}
+	}, remainingDelay);
+};
+
+const handleLyricsScroll = () => {
+	if (isProgrammaticScroll) {
+		return;
+	}
+
+	lastUserScrollAt.value = Date.now();
+	scheduleAutoScrollResume();
+};
+
+const handleManualScrollStart = () => {
+	if (!isProgrammaticScroll) {
+		return;
+	}
+
+	clearAutoScrollAnimationLock();
+	lastUserScrollAt.value = Date.now();
+	scheduleAutoScrollResume();
+};
+
+const seekToLyric = async (time: number, index: number) => {
+	const audio = getAudioElement();
+	if (!audio) {
+		return;
+	}
+
+	const shouldResumePlayback = audio.paused || audio.ended;
+	audio.currentTime = time;
+	currentTime.value = time;
+
+	if (shouldResumePlayback) {
+		try {
+			await audio.play();
+		} catch {
+			// Keep the seek even if playback cannot resume.
+		}
+	}
+
+	scrollToCurrentLyric(index, false);
 };
 
 onMounted(() => {
 	trackTime();
-	updateScroll();
 });
 
-onUnmounted(() => {
+watch(currentLyricIndex, () => {
+	if (shouldAutoScroll()) {
+		scrollToCurrentLyric(currentLyricIndex.value, true);
+	}
+});
+
+watch(isPlaying, (playing) => {
+	if (playing && shouldAutoScroll()) {
+		scrollToCurrentLyric(currentLyricIndex.value, true);
+	}
+});
+
+watch(
+	() => playerStore.currentTrack,
+	() => {
+		lastUserScrollAt.value = 0;
+		clearResumeAutoScrollTimeout();
+		clearAutoScrollAnimationLock();
+	},
+);
+
+onBeforeUnmount(() => {
 	if (timeTrackingId !== null) {
 		cancelAnimationFrame(timeTrackingId);
 	}
-	if (scrollUpdateId !== null) {
-		cancelAnimationFrame(scrollUpdateId);
-	}
+	clearResumeAutoScrollTimeout();
+	clearAutoScrollAnimationLock();
 });
 
 const hasLyrics = computed(() => allLyrics.value.length > 0);
@@ -75,12 +199,20 @@ const noLyricsMessage = computed(() => {
 			<p>{{ noLyricsMessage }}</p>
 		</div>
 
-		<div v-else ref="lyricsContainerRef" class="lyrics-content">
+		<div
+			v-else
+			ref="lyricsContainerRef"
+			class="lyrics-content"
+			@scroll="handleLyricsScroll"
+			@wheel="handleManualScrollStart"
+			@touchmove="handleManualScrollStart"
+		>
 			<div
 				v-for="(line, index) in allLyrics"
 				:key="`${line.time}-${index}`"
 				class="lyric-line"
 				:class="{ 'is-current': index === currentLyricIndex }"
+				@click="seekToLyric(line.time, index)"
 			>
 				{{ line.text }}
 			</div>
