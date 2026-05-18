@@ -3,8 +3,10 @@ import { onBeforeUnmount, ref } from 'vue';
 
 const props = defineProps<{
 	isShuffleActive: boolean;
+	shuffleIcon: string;
 	playPauseLabel: string;
 	playPauseIcon: string;
+	repeatIcon: string;
 	repeatLabel: string;
 	currentTimeLabel: string;
 	durationLabel: string;
@@ -79,7 +81,7 @@ onBeforeUnmount(() => {
 <template>
 	<div class="now-playing-center">
 		<button v-tooltip.top="{ value: 'Shuffle', showDelay: 300 }" class="player-btn" type="button" aria-label="Shuffle" :class="{ 'is-active': isShuffleActive }" @click="emit('toggle-shuffle')">
-			<img alt="Shuffle" src="../assets/svg/shuffle.svg">
+			<img alt="Shuffle" :src="shuffleIcon">
 		</button>
 		<button v-tooltip.top="{ value: 'Previous', showDelay: 300 }" class="player-btn" type="button" aria-label="Previous" @click="emit('skip-previous')">
 			<img alt="Previous" src="../assets/svg/skip-previous.svg">
@@ -98,7 +100,7 @@ onBeforeUnmount(() => {
 			<img alt="Next" src="../assets/svg/skip-next.svg">
 		</button>
 		<button v-tooltip.top="{ value: repeatLabel, showDelay: 300 }" class="player-btn" type="button" :aria-label="repeatLabel" :class="{ 'is-active': repeatLabel !== 'Repeat' }" @click="emit('toggle-repeat')">
-			<img alt="Repeat" src="../assets/svg/repeat.svg">
+			<img alt="Repeat" :src="repeatIcon">
 		</button>
 	</div>
 

@@ -19,6 +19,10 @@ const emit = defineEmits<{
 
 const getSvgUrl = (name: string) => new URL(`../assets/svg/${name}.svg`, import.meta.url).href;
 
+const lyricsIcon = computed(() => (props.activeMiddleTab === 'lyrics' ? getSvgUrl('lyrics-active') : getSvgUrl('lyrics')));
+const queueIcon = computed(() => (props.activeRightTab === 'queue' ? getSvgUrl('queue-active') : getSvgUrl('queue')));
+const connectIcon = computed(() => (props.activeRightTab === 'connect' ? getSvgUrl('connect-device-active') : getSvgUrl('connect-device')));
+
 const isMuted = computed(() => props.volume === 0);
 const volumeIconName = computed(() => {
 	if (props.volume === 0) {
@@ -56,28 +60,34 @@ const handleVolumeInput = (event: Event) => {
 	<div class="now-playing-right">
 		<button
 			v-tooltip.top="{ value: 'Lyrics', showDelay: 300 }"
-			class="player-btn now-playing-icon-button icon-lyrics"
+			class="player-btn"
 			type="button"
 			aria-label="Lyrics"
 			:aria-pressed="activeMiddleTab === 'lyrics'"
 			@click="emit('toggle-middle-tab', 'lyrics')"
-		></button>
+		>
+			<img :alt="'Lyrics'" :src="lyricsIcon">
+		</button>
 		<button
 			v-tooltip.top="{ value: 'Queue', showDelay: 300 }"
-			class="player-btn now-playing-icon-button icon-queue"
+			class="player-btn"
 			type="button"
 			aria-label="Queue"
 			:aria-pressed="activeRightTab === 'queue'"
 			@click="emit('toggle-right-tab', 'queue')"
-		></button>
+		>
+			<img :alt="'Queue'" :src="queueIcon">
+		</button>
 		<button
 			v-tooltip.top="{ value: 'Connect to a device', showDelay: 300 }"
-			class="player-btn now-playing-icon-button icon-connect"
+			class="player-btn"
 			type="button"
 			aria-label="Connect to a device"
 			:aria-pressed="activeRightTab === 'connect'"
 			@click="emit('toggle-right-tab', 'connect')"
-		></button>
+		>
+			<img :alt="'Connect'" :src="connectIcon">
+		</button>
 		<div class="volume-control">
 			<button
 				v-tooltip.top="{ value: isMuted ? 'Unmute' : 'Mute', showDelay: 300 }"
@@ -126,45 +136,23 @@ const handleVolumeInput = (event: Event) => {
 	width: 2rem;
 	height: 2rem;
 	font-size: 0.95rem;
-}
-
-.now-playing-icon-button {
 	padding: 0;
-	background-color: #ffffff !important;
-	transition: background-color 0.2s ease, transform 0.1s ease;
-	-webkit-mask-repeat: no-repeat;
-	mask-repeat: no-repeat;
-	-webkit-mask-position: center;
-	mask-position: center;
-	-webkit-mask-size: 16px 16px;
-	mask-size: 16px 16px;
+	background: transparent;
+	border: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: transform 0.1s ease;
 }
 
-.now-playing-icon-button[aria-pressed='true'] {
-	background-color: #1ed760 !important;
-}
-
-.now-playing-icon-button:not([aria-pressed='true']):hover {
-	background-color: #ffffff !important;
-}
-
-.now-playing-icon-button:hover {
+.now-playing-right .player-btn:hover {
 	transform: scale(1.05);
 }
 
-.icon-lyrics {
-	-webkit-mask-image: url('../assets/svg/lyrics.svg');
-	mask-image: url('../assets/svg/lyrics.svg');
-}
-
-.icon-queue {
-	-webkit-mask-image: url('../assets/svg/queue.svg');
-	mask-image: url('../assets/svg/queue.svg');
-}
-
-.icon-connect {
-	-webkit-mask-image: url('../assets/svg/connect-device.svg');
-	mask-image: url('../assets/svg/connect-device.svg');
+.now-playing-right .player-btn img {
+	width: 16px;
+	height: 16px;
 }
 
 .volume-control {

@@ -37,6 +37,7 @@ const displayTitle = computed(() => currentTrack.value?.trackName);
 const displayArtist = computed(() => currentTrack.value?.artistsText);
 const displayCover = computed(() => currentTrack.value?.coverUrl ?? fallbackCoverUrl);
 const isShuffleActive = computed(() => playerStore.isShuffled);
+const shuffleIcon = computed(() => (isShuffleActive.value ? getSvgUrl('shuffle-active') : getSvgUrl('shuffle')));
 const repeatLabel = computed(() => {
 	if (playerStore.repeatMode === 'one') {
 		return 'Repeat one';
@@ -47,6 +48,17 @@ const repeatLabel = computed(() => {
 	}
 
 	return 'Repeat';
+});
+const repeatIcon = computed(() => {
+	if (playerStore.repeatMode === 'one') {
+		return getSvgUrl('repeat-one-active');
+	}
+
+	if (playerStore.repeatMode === 'all') {
+		return getSvgUrl('repeat-active');
+	}
+
+	return getSvgUrl('repeat');
 });
 const resolvedDuration = computed(() => {
 	if (duration.value > 0) {
@@ -349,8 +361,10 @@ onMounted(() => {
 
 		<NowPlayingTransportControls
 			:is-shuffle-active="isShuffleActive"
+			:shuffle-icon="shuffleIcon"
 			:play-pause-label="playPauseLabel"
 			:play-pause-icon="playPauseIcon"
+			:repeat-icon="repeatIcon"
 			:repeat-label="repeatLabel"
 			:current-time-label="currentTimeLabel"
 			:duration-label="durationLabel"
@@ -481,7 +495,7 @@ onMounted(() => {
 }
 
 .player-btn.is-active {
-	background: rgb(0, 84, 29);
+	background: transparent;
 }
 
 .player-play-btn {
